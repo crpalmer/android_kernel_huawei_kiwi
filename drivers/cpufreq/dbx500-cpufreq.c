@@ -125,7 +125,7 @@ static struct cpufreq_driver dbx500_cpufreq_driver = {
 
 static int dbx500_cpufreq_probe(struct platform_device *pdev)
 {
-	int i = 0;
+	struct cpufreq_frequency_table *pos;
 
 	freq_table = dev_get_platdata(&pdev->dev);
 	if (!freq_table) {
@@ -140,10 +140,8 @@ static int dbx500_cpufreq_probe(struct platform_device *pdev)
 	}
 
 	pr_info("dbx500-cpufreq: Available frequencies:\n");
-	while (freq_table[i].frequency != CPUFREQ_TABLE_END) {
-		pr_info("  %d Mhz\n", freq_table[i].frequency/1000);
-		i++;
-	}
+	cpufreq_for_each_entry(pos, freq_table)
+		pr_info("  %d Mhz\n", pos->frequency / 1000);
 
 	return cpufreq_register_driver(&dbx500_cpufreq_driver);
 }
