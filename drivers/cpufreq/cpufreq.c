@@ -1091,9 +1091,6 @@ static int update_policy_cpu(struct cpufreq_policy *policy, unsigned int cpu,
 	policy->cpu = cpu;
 	up_write(&policy->rwsem);
 
-	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
-			CPUFREQ_UPDATE_POLICY_CPU, policy);
-
 	return 0;
 }
 
