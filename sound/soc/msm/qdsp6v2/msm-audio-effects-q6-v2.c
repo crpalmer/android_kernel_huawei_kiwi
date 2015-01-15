@@ -945,6 +945,89 @@ invalid_config:
 	return rc;
 }
 
+int msm_audio_effects_pbe_handler(struct audio_client *ac,
+					struct pbe_params *pbe,
+					long *values)
+{
+	int devices = *values++;
+	int num_commands = *values++;
+	char *params;
+	int *updt_params, i, j, prev_enable_flag;
+	uint32_t params_length = (MAX_INBAND_PARAM_SZ);
+	int rc = 0;
+
+	pr_debug("%s\n", __func__);
+	if (!ac) {
+		pr_err("%s: cannot set audio effects\n", __func__);
+		return -EINVAL;
+	}
+	params = kzalloc(params_length, GFP_KERNEL);
+	if (!params) {
+		pr_err("%s, params memory alloc failed\n", __func__);
+		return -ENOMEM;
+	}
+	pr_debug("%s: device: %d\n", __func__, devices);
+	updt_params = (int *)params;
+	params_length = 0;
+	for (i = 0; i < num_commands; i++) {
+		uint32_t command_id = *values++;
+		uint32_t command_config_state = *values++;
+		uint32_t index_offset = *values++;
+		uint32_t length = *values++;
+		switch (command_id) {
+		case PBE_ENABLE:
+			pr_debug("%s: PBE_ENABLE\n", __func__);
+			if (length != 1 || index_offset != 0) {
+				pr_err("no valid params\n");
+				rc = -EINVAL;
+				goto invalid_config;
+			}
+			prev_enable_flag = pbe->enable_flag;
+			pbe->enable_flag = *values++;
+			if (prev_enable_flag != pbe->enable_flag) {
+				*updt_params++ = AUDPROC_MODULE_ID_PBE;
+				*updt_params++ =
+					AUDPROC_PARAM_ID_PBE_ENABLE;
+				*updt_params++ = PBE_ENABLE_PARAM_SZ;
+				*updt_params++ = pbe->enable_flag;
+				params_length += COMMAND_PAYLOAD_SZ +
+					PBE_ENABLE_PARAM_SZ;
+			}
+			break;
+		case PBE_CONFIG:
+			pr_debug("%s: PBE_PARAM length %u\n", __func__, length);
+			if (length > sizeof(struct pbe_config_t) ||
+				length < PBE_CONFIG_PARAM_LEN ||
+				index_offset != 0) {
+				pr_err("no valid params, len %d\n", length);
+				rc = -EINVAL;
+				goto invalid_config;
+			}
+			if (command_config_state == CONFIG_SET) {
+				*updt_params++ = AUDPROC_MODULE_ID_PBE;
+				*updt_params++ =
+					AUDPROC_PARAM_ID_PBE_PARAM_CONFIG;
+				*updt_params++ = length;
+				for (j = 0; j < length; ) {
+					j += sizeof(*updt_params);
+					*updt_params++ = *values++;
+				}
+				params_length += COMMAND_PAYLOAD_SZ + length;
+			}
+			break;
+		default:
+			pr_err("%s: Invalid command to set config\n", __func__);
+			break;
+		}
+	}
+	if (params_length)
+		q6asm_send_audio_effects_params(ac, params,
+						params_length);
+invalid_config:
+	kfree(params);
+	return rc;
+}
+
 int msm_audio_effects_popless_eq_handler(struct audio_client *ac,
 					 struct eq_params *eq,
 					 long *values)
