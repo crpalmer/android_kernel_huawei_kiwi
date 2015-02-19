@@ -994,6 +994,10 @@ static int cpufreq_add_policy_cpu(struct cpufreq_policy *policy,
 	int ret = 0;
 	unsigned long flags;
 
+	/* Has this CPU been taken care of already? */
+	if (cpumask_test_cpu(cpu, policy->cpus))
+		return 0;
+
 	if (has_target()) {
 		ret = __cpufreq_governor(policy, CPUFREQ_GOV_STOP);
 		if (ret) {
@@ -1149,16 +1153,10 @@ static int cpufreq_add_dev(struct device *dev, struct subsys_interface *sif)
 
 	pr_debug("adding CPU %u\n", cpu);
 
-	/* check whether a different CPU already registered this
-	 * CPU because it is in the same boat. */
-	policy = cpufreq_cpu_get_raw(cpu);
-	if (unlikely(policy))
-		return 0;
-
 	if (!down_read_trylock(&cpufreq_rwsem))
 		return 0;
 
-	/* Check if this cpu was hot-unplugged earlier and has siblings */
+	/* Check if this CPU already has a policy to manage it */
 	read_lock_irqsave(&cpufreq_driver_lock, flags);
 	for_each_policy(policy) {
 		if (cpumask_test_cpu(cpu, policy->related_cpus)) {
