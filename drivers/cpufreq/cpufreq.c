@@ -1134,6 +1134,7 @@ static struct cpufreq_policy *cpufreq_policy_restore(unsigned int cpu)
 
 		down_write(&policy->rwsem);
 		policy->cpu = cpu;
+		policy->governor = NULL;
 		up_write(&policy->rwsem);
 	}
 
