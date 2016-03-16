@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2016, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -841,15 +841,16 @@ int msm_audio_effects_pbe_handler(struct audio_client *ac,
 					struct pbe_params *pbe,
 					long *values)
 {
-	int devices = *values++;
-	int num_commands = *values++;
-	char *params;
+	long *param_max_offset = values + MAX_PP_PARAMS_SZ - 1;
+	char *params = NULL;
+	int rc = 0;
+	int devices = GET_NEXT(values, param_max_offset, rc);
+	int num_commands = GET_NEXT(values, param_max_offset, rc);
 	int *updt_params, i, j, prev_enable_flag;
 	uint32_t params_length = (MAX_INBAND_PARAM_SZ);
-	int rc = 0;
 
 	pr_debug("%s\n", __func__);
-	if (!ac) {
+	if (!ac || (devices == -EINVAL) || (num_commands == -EINVAL)) {
 		pr_err("%s: cannot set audio effects\n", __func__);
 		return -EINVAL;
 	}
@@ -862,10 +863,14 @@ int msm_audio_effects_pbe_handler(struct audio_client *ac,
 	updt_params = (int *)params;
 	params_length = 0;
 	for (i = 0; i < num_commands; i++) {
-		uint32_t command_id = *values++;
-		uint32_t command_config_state = *values++;
-		uint32_t index_offset = *values++;
-		uint32_t length = *values++;
+		uint32_t command_id =
+			GET_NEXT(values, param_max_offset, rc);
+		uint32_t command_config_state =
+			GET_NEXT(values, param_max_offset, rc);
+		uint32_t index_offset =
+			GET_NEXT(values, param_max_offset, rc);
+		uint32_t length =
+			GET_NEXT(values, param_max_offset, rc);
 		switch (command_id) {
 		case PBE_ENABLE:
 			pr_debug("%s: PBE_ENABLE\n", __func__);
@@ -875,15 +880,24 @@ int msm_audio_effects_pbe_handler(struct audio_client *ac,
 				goto invalid_config;
 			}
 			prev_enable_flag = pbe->enable_flag;
-			pbe->enable_flag = *values++;
+			pbe->enable_flag =
+				GET_NEXT(values, param_max_offset, rc);
 			if (prev_enable_flag != pbe->enable_flag) {
-				*updt_params++ = AUDPROC_MODULE_ID_PBE;
-				*updt_params++ =
-					AUDPROC_PARAM_ID_PBE_ENABLE;
-				*updt_params++ = PBE_ENABLE_PARAM_SZ;
-				*updt_params++ = pbe->enable_flag;
 				params_length += COMMAND_PAYLOAD_SZ +
 					PBE_ENABLE_PARAM_SZ;
+				CHECK_PARAM_LEN(params_length,
+						MAX_INBAND_PARAM_SZ,
+						"PBE_ENABLE", rc);
+				if (rc != 0)
+					break;
+				*updt_params++ =
+					AUDPROC_MODULE_ID_PBE;
+				*updt_params++ =
+					AUDPROC_PARAM_ID_PBE_ENABLE;
+				*updt_params++ =
+					PBE_ENABLE_PARAM_SZ;
+				*updt_params++ =
+					pbe->enable_flag;
 			}
 			break;
 		case PBE_CONFIG:
@@ -896,15 +910,26 @@ int msm_audio_effects_pbe_handler(struct audio_client *ac,
 				goto invalid_config;
 			}
 			if (command_config_state == CONFIG_SET) {
-				*updt_params++ = AUDPROC_MODULE_ID_PBE;
+				params_length += COMMAND_PAYLOAD_SZ + length;
+				CHECK_PARAM_LEN(params_length,
+						MAX_INBAND_PARAM_SZ,
+						"PBE_PARAM", rc);
+				if (rc != 0)
+					break;
+				*updt_params++ =
+					AUDPROC_MODULE_ID_PBE;
 				*updt_params++ =
 					AUDPROC_PARAM_ID_PBE_PARAM_CONFIG;
-				*updt_params++ = length;
+				*updt_params++ =
+					length;
 				for (j = 0; j < length; ) {
 					j += sizeof(*updt_params);
-					*updt_params++ = *values++;
+					*updt_params++ =
+						GET_NEXT(
+						values,
+						param_max_offset,
+						rc);
 				}
-				params_length += COMMAND_PAYLOAD_SZ + length;
 			}
 			break;
 		default:
