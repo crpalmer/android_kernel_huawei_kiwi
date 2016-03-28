@@ -616,7 +616,7 @@ static int  msm_thermal_cpufreq_callback(struct notifier_block *nfb,
 	uint32_t max_freq_req, min_freq_req;
 
 	switch (event) {
-	case CPUFREQ_INCOMPATIBLE:
+	case CPUFREQ_ADJUST:
 		if (SYNC_CORE(policy->cpu)) {
 			max_freq_req =
 				cpus[policy->cpu].parent_ptr->limited_max_freq;

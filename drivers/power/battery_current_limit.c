@@ -275,7 +275,7 @@ static int bcl_cpufreq_callback(struct notifier_block *nfb,
 	uint32_t max_freq = UINT_MAX;
 
 	switch (event) {
-	case CPUFREQ_INCOMPATIBLE:
+	case CPUFREQ_ADJUST:
 		if (bcl_vph_state == BCL_LOW_THRESHOLD
 			&& bcl_ibat_state == BCL_HIGH_THRESHOLD) {
 			max_freq = (gbcl->bcl_monitor_type
