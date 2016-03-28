@@ -20,6 +20,7 @@
 #include <linux/platform_device.h>
 #include <linux/of.h>
 #include <linux/module.h>
+#include <linux/cpufreq.h>
 #include "governor.h"
 
 struct cpu_state {
