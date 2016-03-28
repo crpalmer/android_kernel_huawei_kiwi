@@ -442,7 +442,6 @@ static void cpufreq_interactive_timer(unsigned long data)
 	unsigned int index;
 	unsigned long flags;
 	bool boosted;
-	struct cpufreq_govinfo int_info;
 
 	if (!down_read_trylock(&pcpu->enable_sem))
 		return;
@@ -482,12 +481,6 @@ static void cpufreq_interactive_timer(unsigned long data)
 	}
 
 	loadadjfreq = (unsigned int)cputime_speedadj * 100;
-
-	int_info.cpu = data;
-	int_info.load = loadadjfreq / pcpu->policy->max;
-	int_info.sampling_rate_us = tunables->timer_rate;
-	atomic_notifier_call_chain(&cpufreq_govinfo_notifier_list,
-					CPUFREQ_LOAD_CHANGE, &int_info);
 
 	spin_lock_irqsave(&pcpu->target_freq_lock, flags);
 	cpu_load = loadadjfreq / pcpu->policy->cur;
@@ -1627,7 +1620,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		tunables->usage_count = 1;
 		policy->governor_data = tunables;
 		if (!have_governor_per_policy()) {
-			WARN_ON(cpufreq_get_global_kobject());
 			common_tunables = tunables;
 		}
 
@@ -1636,10 +1628,8 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		if (rc) {
 			kfree(tunables);
 			policy->governor_data = NULL;
-			if (!have_governor_per_policy()) {
+			if (!have_governor_per_policy())
 				common_tunables = NULL;
-				cpufreq_put_global_kobject();
-			}
 			return rc;
 		}
 
@@ -1664,8 +1654,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 
 			sysfs_remove_group(get_governor_parent_kobj(policy),
 					get_sysfs_attr());
-			if (!have_governor_per_policy())
-				cpufreq_put_global_kobject();
 			common_tunables = NULL;
 		}
 
