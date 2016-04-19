@@ -215,8 +215,8 @@ struct common_dbs_data {
 	unsigned int (*gov_dbs_timer)(struct cpufreq_policy *policy,
 				      bool modify_all);
 	void (*gov_check_cpu)(int cpu, unsigned int load);
-	int (*init)(struct dbs_data *dbs_data, bool notify);
-	void (*exit)(struct dbs_data *dbs_data, bool notify);
+	int (*init)(struct cpufreq_policy *policy, struct dbs_data *dbs_data, bool notify);
+	void (*exit)(struct cpufreq_policy *policy, struct dbs_data *dbs_data, bool notify);
 
 	/* Governor specific ops, see below */
 	void *gov_ops;

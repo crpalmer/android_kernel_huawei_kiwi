@@ -325,7 +325,7 @@ static struct attribute_group cs_attr_group_gov_pol = {
 
 /************************** sysfs end ************************/
 
-static int cs_init(struct dbs_data *dbs_data, bool notify)
+static int cs_init(struct cpufreq_policy *policy, struct dbs_data *dbs_data, bool notify)
 {
 	struct cs_dbs_tuners *tuners;
 
@@ -352,7 +352,7 @@ static int cs_init(struct dbs_data *dbs_data, bool notify)
 	return 0;
 }
 
-static void cs_exit(struct dbs_data *dbs_data, bool notify)
+static void cs_exit(struct cpufreq_policy *policy, struct dbs_data *dbs_data, bool notify)
 {
 	if (notify)
 		cpufreq_unregister_notifier(&cs_cpufreq_notifier_block,

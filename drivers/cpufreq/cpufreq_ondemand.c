@@ -483,7 +483,7 @@ static struct attribute_group od_attr_group_gov_pol = {
 
 /************************** sysfs end ************************/
 
-static int od_init(struct dbs_data *dbs_data, bool notify)
+static int od_init(struct cpufreq_policy *policy, struct dbs_data *dbs_data, bool notify)
 {
 	struct od_dbs_tuners *tuners;
 	u64 idle_time;
@@ -524,7 +524,7 @@ static int od_init(struct dbs_data *dbs_data, bool notify)
 	return 0;
 }
 
-static void od_exit(struct dbs_data *dbs_data, bool notify)
+static void od_exit(struct cpufreq_policy *policy, struct dbs_data *dbs_data, bool notify)
 {
 	kfree(dbs_data->tuners);
 }
