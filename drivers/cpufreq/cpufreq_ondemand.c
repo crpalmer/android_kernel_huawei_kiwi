@@ -28,6 +28,7 @@
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
 
 static DEFINE_PER_CPU(struct od_cpu_dbs_info_s, od_cpu_dbs_info);
+static DEFINE_PER_CPU(struct od_dbs_tuners *, saved_tuners);
 
 static struct od_ops od_ops;
 
@@ -37,12 +38,36 @@ static struct cpufreq_governor cpufreq_gov_ondemand;
 
 static unsigned int default_powersave_bias;
 
+static void save_tuners(int cpu)
+{
+	struct od_cpu_dbs_info_s *dbs_info = &per_cpu(od_cpu_dbs_info, cpu);
+	struct cpufreq_policy *policy = dbs_info->cdbs.shared->policy;
+	struct dbs_data *dbs_data = policy->governor_data;
+	struct od_dbs_tuners *od_tuners = dbs_data->tuners;
+
+	per_cpu(saved_tuners, cpu) = od_tuners;
+}
+
 static void ondemand_powersave_bias_init_cpu(int cpu)
 {
 	struct od_cpu_dbs_info_s *dbs_info = &per_cpu(od_cpu_dbs_info, cpu);
 
 	dbs_info->freq_table = cpufreq_frequency_get_table(cpu);
 	dbs_info->freq_lo = 0;
+
+	save_tuners(cpu);
+}
+
+static struct od_dbs_tuners *restore_tuners(struct cpufreq_policy *policy, int my_cpu)
+{
+	int cpu;
+
+	for_each_cpu(cpu, policy->cpus) {
+		struct od_dbs_tuners *tuners = per_cpu(saved_tuners, cpu);
+		if (tuners)
+			return tuners;
+	}
+	return per_cpu(saved_tuners, my_cpu);
 }
 
 /*
@@ -489,36 +514,39 @@ static int od_init(struct cpufreq_policy *policy, struct dbs_data *dbs_data, boo
 	u64 idle_time;
 	int cpu;
 
-	tuners = kzalloc(sizeof(*tuners), GFP_KERNEL);
-	if (!tuners) {
-		pr_err("%s: kzalloc failed\n", __func__);
-		return -ENOMEM;
-	}
-
 	cpu = get_cpu();
-	idle_time = get_cpu_idle_time_us(cpu, NULL);
-	put_cpu();
-	if (idle_time != -1ULL) {
-		/* Idle micro accounting is supported. Use finer thresholds */
-		tuners->up_threshold = MICRO_FREQUENCY_UP_THRESHOLD;
-		/*
-		 * In nohz/micro accounting case we set the minimum frequency
-		 * not depending on HZ, but fixed (very low). The deferred
-		 * timer might skip some samples if idle/sleeping as needed.
-		*/
-		dbs_data->min_sampling_rate = MICRO_FREQUENCY_MIN_SAMPLE_RATE;
-	} else {
-		tuners->up_threshold = DEF_FREQUENCY_UP_THRESHOLD;
+	tuners = restore_tuners(policy, cpu);
+	if (!tuners) {
+		tuners = kzalloc(sizeof(*tuners), GFP_KERNEL);
+		if (!tuners) {
+			pr_err("%s: kzalloc failed\n", __func__);
+			return -ENOMEM;
+		}
 
-		/* For correct statistics, we need 10 ticks for each measure */
-		dbs_data->min_sampling_rate = MIN_SAMPLING_RATE_RATIO *
-			jiffies_to_usecs(10);
+		idle_time = get_cpu_idle_time_us(cpu, NULL);
+		if (idle_time != -1ULL) {
+			/* Idle micro accounting is supported. Use finer thresholds */
+			tuners->up_threshold = MICRO_FREQUENCY_UP_THRESHOLD;
+			/*
+			 * In nohz/micro accounting case we set the minimum frequency
+			 * not depending on HZ, but fixed (very low). The deferred
+			 * timer might skip some samples if idle/sleeping as needed.
+			*/
+			dbs_data->min_sampling_rate = MICRO_FREQUENCY_MIN_SAMPLE_RATE;
+		} else {
+			tuners->up_threshold = DEF_FREQUENCY_UP_THRESHOLD;
+
+			/* For correct statistics, we need 10 ticks for each measure */
+			dbs_data->min_sampling_rate = MIN_SAMPLING_RATE_RATIO *
+				jiffies_to_usecs(10);
+		}
+
+		tuners->sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR;
+		tuners->ignore_nice_load = 0;
+		tuners->powersave_bias = default_powersave_bias;
+		tuners->io_is_busy = should_io_be_busy();
 	}
-
-	tuners->sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR;
-	tuners->ignore_nice_load = 0;
-	tuners->powersave_bias = default_powersave_bias;
-	tuners->io_is_busy = should_io_be_busy();
+	put_cpu();
 
 	dbs_data->tuners = tuners;
 	return 0;
@@ -526,7 +554,7 @@ static int od_init(struct cpufreq_policy *policy, struct dbs_data *dbs_data, boo
 
 static void od_exit(struct cpufreq_policy *policy, struct dbs_data *dbs_data, bool notify)
 {
-	kfree(dbs_data->tuners);
+	/* Tuners have already been saved so don't free them */
 }
 
 define_get_cpu_dbs_routines(od_cpu_dbs_info);

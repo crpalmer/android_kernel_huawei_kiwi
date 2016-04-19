@@ -295,15 +295,17 @@ static void dbs_timer_handler(unsigned long data)
 		queue_work(system_wq, &shared->work);
 }
 
-static void set_sampling_rate(struct dbs_data *dbs_data,
+static void set_initial_sampling_rate(struct dbs_data *dbs_data,
 		unsigned int sampling_rate)
 {
 	if (dbs_data->cdata->governor == GOV_CONSERVATIVE) {
 		struct cs_dbs_tuners *cs_tuners = dbs_data->tuners;
-		cs_tuners->sampling_rate = sampling_rate;
+		if (sampling_rate > cs_tuners->sampling_rate)
+			cs_tuners->sampling_rate = sampling_rate;
 	} else {
 		struct od_dbs_tuners *od_tuners = dbs_data->tuners;
-		od_tuners->sampling_rate = sampling_rate;
+		if (sampling_rate > od_tuners->sampling_rate)
+			od_tuners->sampling_rate = sampling_rate;
 	}
 }
 
@@ -390,7 +392,7 @@ static int cpufreq_governor_init(struct cpufreq_policy *policy,
 	/* Bring kernel and HW constraints together */
 	dbs_data->min_sampling_rate = max(dbs_data->min_sampling_rate,
 					  MIN_LATENCY_MULTIPLIER * latency);
-	set_sampling_rate(dbs_data, max(dbs_data->min_sampling_rate,
+	set_initial_sampling_rate(dbs_data, max(dbs_data->min_sampling_rate,
 					latency * LATENCY_MULTIPLIER));
 
 	if (!have_governor_per_policy())
