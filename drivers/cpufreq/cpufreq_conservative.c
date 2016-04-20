@@ -22,6 +22,7 @@
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
 #define MICRO_MIN_SAMPLING_RATE			(10000)
+#define MICRO_UP_THRESHOLD			(95)
 
 static DEFINE_PER_CPU(struct cs_cpu_dbs_info_s, cs_cpu_dbs_info);
 
@@ -41,7 +42,8 @@ struct cpufreq_governor cpufreq_gov_conservative = {
 static inline unsigned int get_freq_target(struct cs_dbs_tuners *cs_tuners,
 					   struct cpufreq_policy *policy)
 {
-	unsigned int freq_target = (cs_tuners->freq_step * policy->max) / 100;
+	unsigned int freq_range = policy->max - policy->min + 1;
+	unsigned int freq_target = (cs_tuners->freq_step * freq_range) / 100;
 
 	/* max freq cannot be less than 100. But who knows... */
 	if (unlikely(freq_target == 0))
@@ -338,22 +340,24 @@ static int cs_init(struct cpufreq_policy *policy, struct dbs_data *dbs_data, boo
 		return -ENOMEM;
 	}
 
-	tuners->up_threshold = DEF_FREQUENCY_UP_THRESHOLD;
 	tuners->down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD;
 	tuners->sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR;
 	tuners->ignore_nice_load = 0;
 	tuners->freq_step = DEF_FREQUENCY_STEP;
 
-	dbs_data->tuners = tuners;
-
 	cpu = get_cpu();
-	if (get_cpu_idle_time_us(cpu, NULL) != -1ULL)
+	if (get_cpu_idle_time_us(cpu, NULL) != -1ULL) {
 		/* Idle micro accounting is supported. Use finer thresholds */
 		tuners->up_threshold = MICRO_MIN_SAMPLING_RATE;
-	else
+		tuners->up_threshold = MICRO_UP_THRESHOLD;
+	} else {
 		dbs_data->min_sampling_rate = MIN_SAMPLING_RATE_RATIO *
 			jiffies_to_usecs(10);
+		tuners->up_threshold = DEF_FREQUENCY_UP_THRESHOLD;
+	}
 	put_cpu();
+
+	dbs_data->tuners = tuners;
 
 	if (notify)
 		cpufreq_register_notifier(&cs_cpufreq_notifier_block,
