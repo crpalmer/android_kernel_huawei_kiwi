@@ -1549,6 +1549,79 @@ static struct subsys_interface cpufreq_interface = {
 	.remove_dev	= cpufreq_remove_dev,
 };
 
+/**
+ * cpufreq_bp_suspend - Prepare the boot CPU for system suspend.
+ *
+ * This function is only executed for the boot processor.  The other CPUs
+ * have been put offline by means of CPU hotplug.
+ */
+static int cpufreq_bp_suspend(void)
+{
+        int ret = 0;
+
+        int cpu = smp_processor_id();
+        struct cpufreq_policy *cpu_policy;
+
+        pr_debug("suspending cpu %u\n", cpu);
+
+        /* If there's no policy for the boot CPU, we have nothing to do. */
+        cpu_policy = cpufreq_cpu_get(cpu);
+        if (!cpu_policy)
+                return 0;
+
+        if (cpufreq_driver->suspend) {
+                ret = cpufreq_driver->suspend(cpu_policy);
+                if (ret)
+                        printk(KERN_ERR "cpufreq: suspend failed in ->suspend "
+                                        "step on CPU %u\n", cpu_policy->cpu);
+        }
+
+        cpufreq_cpu_put(cpu_policy);
+        return ret;
+}
+
+/**
+ * cpufreq_bp_resume - Restore proper frequency handling of the boot CPU.
+ *
+ *      1.) resume CPUfreq hardware support (cpufreq_driver->resume())
+ *      2.) schedule call cpufreq_update_policy() ASAP as interrupts are
+ *          restored. It will verify that the current freq is in sync with
+ *          what we believe it to be. This is a bit later than when it
+ *          should be, but nonethteless it's better than calling
+ *          cpufreq_driver->get() here which might re-enable interrupts...
+ *
+ * This function is only executed for the boot CPU.  The other CPUs have not
+ * been turned on yet.
+ */
+static void cpufreq_bp_resume(void)
+{
+        int ret = 0;
+
+        int cpu = smp_processor_id();
+        struct cpufreq_policy *cpu_policy;
+
+        pr_debug("resuming cpu %u\n", cpu);
+
+        /* If there's no policy for the boot CPU, we have nothing to do. */
+        cpu_policy = cpufreq_cpu_get(cpu);
+        if (!cpu_policy)
+                return;
+
+        if (cpufreq_driver->resume) {
+                ret = cpufreq_driver->resume(cpu_policy);
+                if (ret) {
+                        printk(KERN_ERR "cpufreq: resume failed in ->resume "
+                                        "step on CPU %u\n", cpu_policy->cpu);
+                        goto fail;
+                }
+        }
+
+        schedule_work(&cpu_policy->update);
+
+fail:
+        cpufreq_cpu_put(cpu_policy);
+}
+
 /*
  * In case platform wants some specific frequency to be configured
  * during suspend..
@@ -1576,14 +1649,10 @@ int cpufreq_generic_suspend(struct cpufreq_policy *policy)
 EXPORT_SYMBOL(cpufreq_generic_suspend);
 
 /**
- * cpufreq_suspend() - Suspend CPUFreq governors
+ * cpufreq_shutdown() - Shutdown CPUFreq governors
  *
- * Called during system wide Suspend/Hibernate cycles for suspending governors
- * as some platforms can't change frequency after this point in suspend cycle.
- * Because some of the devices (like: i2c, regulators, etc) they use for
- * changing frequency are suspended quickly after this point.
  */
-void cpufreq_suspend(void)
+void cpufreq_shutdown(void)
 {
 	struct cpufreq_policy *policy;
 
@@ -1591,7 +1660,7 @@ void cpufreq_suspend(void)
 		return;
 
 	if (!has_target())
-		goto suspend;
+		return;
 
 	pr_debug("%s: Suspending Governors\n", __func__);
 
@@ -1604,51 +1673,6 @@ void cpufreq_suspend(void)
 			pr_err("%s: Failed to suspend driver: %p\n", __func__,
 				policy);
 	}
-
-suspend:
-	cpufreq_suspended = true;
-}
-
-/**
- * cpufreq_resume() - Resume CPUFreq governors
- *
- * Called during system wide Suspend/Hibernate cycle for resuming governors that
- * are suspended with cpufreq_suspend().
- */
-void cpufreq_resume(void)
-{
-	struct cpufreq_policy *policy;
-
-	if (!cpufreq_driver)
-		return;
-
-	cpufreq_suspended = false;
-
-	if (!has_target())
-		return;
-
-	pr_debug("%s: Resuming Governors\n", __func__);
-
-	for_each_active_policy(policy) {
-		if (cpufreq_driver->resume && cpufreq_driver->resume(policy))
-			pr_err("%s: Failed to resume driver: %p\n", __func__,
-				policy);
-		else if (__cpufreq_governor(policy, CPUFREQ_GOV_START)
-		    || __cpufreq_governor(policy, CPUFREQ_GOV_LIMITS))
-			pr_err("%s: Failed to start governor for policy: %p\n",
-				__func__, policy);
-	}
-
-	/*
-	 * schedule call cpufreq_update_policy() for first-online CPU, as that
-	 * wouldn't be hotplugged-out on suspend. It will verify that the
-	 * current freq is in sync with what we believe it to be.
-	 */
-	policy = cpufreq_cpu_get_raw(cpumask_first(cpu_online_mask));
-	if (WARN_ON(!policy))
-		return;
-
-	schedule_work(&policy->update);
 }
 
 /**
@@ -2499,7 +2523,9 @@ EXPORT_SYMBOL_GPL(cpufreq_unregister_driver);
  * or mutexes when secondary CPUs are halted.
  */
 static struct syscore_ops cpufreq_syscore_ops = {
-	.shutdown = cpufreq_suspend,
+        .suspend        = cpufreq_bp_suspend,
+        .resume         = cpufreq_bp_resume,
+	.shutdown = cpufreq_shutdown,
 };
 
 struct kobject *cpufreq_global_kobject;
