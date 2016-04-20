@@ -12,6 +12,7 @@
  */
 
 #include <linux/slab.h>
+#include <linux/tick.h>
 #include "cpufreq_governor.h"
 
 /* Conservative governor macros */
@@ -20,6 +21,7 @@
 #define DEF_FREQUENCY_STEP			(5)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
+#define MICRO_MIN_SAMPLING_RATE			(10000)
 
 static DEFINE_PER_CPU(struct cs_cpu_dbs_info_s, cs_cpu_dbs_info);
 
@@ -328,6 +330,7 @@ static struct attribute_group cs_attr_group_gov_pol = {
 static int cs_init(struct cpufreq_policy *policy, struct dbs_data *dbs_data, bool notify)
 {
 	struct cs_dbs_tuners *tuners;
+	int cpu;
 
 	tuners = kzalloc(sizeof(*tuners), GFP_KERNEL);
 	if (!tuners) {
@@ -342,8 +345,15 @@ static int cs_init(struct cpufreq_policy *policy, struct dbs_data *dbs_data, boo
 	tuners->freq_step = DEF_FREQUENCY_STEP;
 
 	dbs_data->tuners = tuners;
-	dbs_data->min_sampling_rate = MIN_SAMPLING_RATE_RATIO *
-		jiffies_to_usecs(10);
+
+	cpu = get_cpu();
+	if (get_cpu_idle_time_us(cpu, NULL) != -1ULL)
+		/* Idle micro accounting is supported. Use finer thresholds */
+		tuners->up_threshold = MICRO_MIN_SAMPLING_RATE;
+	else
+		dbs_data->min_sampling_rate = MIN_SAMPLING_RATE_RATIO *
+			jiffies_to_usecs(10);
+	put_cpu();
 
 	if (notify)
 		cpufreq_register_notifier(&cs_cpufreq_notifier_block,
