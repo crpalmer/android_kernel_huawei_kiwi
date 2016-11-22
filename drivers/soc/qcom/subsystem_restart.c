@@ -893,6 +893,7 @@ static void __subsystem_restart_dev(struct subsys_device *dev)
 	spin_lock_irqsave(&track->s_lock, flags);
 	if (track->p_state != SUBSYS_CRASHED &&
 					dev->track.state == SUBSYS_ONLINE) {
+#if 0
 		if (track->p_state != SUBSYS_RESTARTING) {
 			track->p_state = SUBSYS_CRASHED;
 			__pm_stay_awake(&dev->ssr_wlock);
@@ -900,6 +901,11 @@ static void __subsystem_restart_dev(struct subsys_device *dev)
 		} else {
 			panic("Subsystem %s crashed during SSR!", name);
 		}
+#else
+			track->p_state = SUBSYS_CRASHED;
+			__pm_stay_awake(&dev->ssr_wlock);
+			queue_work(ssr_wq, &dev->work);
+#endif
 	} else
 		WARN(dev->track.state == SUBSYS_OFFLINE,
 			"SSR aborted: %s subsystem not online\n", name);
