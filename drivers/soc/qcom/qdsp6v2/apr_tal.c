@@ -56,7 +56,7 @@ int __apr_tal_write(struct apr_svc_ch_dev *apr_ch, void *data, int len)
 
 	w_len = smd_write(apr_ch->ch, data, len);
 	spin_unlock_irqrestore(&apr_ch->w_lock, flags);
-	pr_debug("apr_tal:w_len = %d\n", w_len);
+	pr_info("apr_tal:w_len = %d\n", w_len);
 
 	if (w_len != len) {
 		pr_err("apr_tal: Error in write\n");
@@ -92,7 +92,7 @@ static void apr_tal_notify(void *priv, unsigned event)
 	int pkt_cnt = 0;
 	unsigned long flags;
 
-	pr_debug("event = %d\n", event);
+	pr_info("event = %d\n", event);
 	switch (event) {
 	case SMD_EVENT_DATA:
 		pkt_cnt = 0;
@@ -106,14 +106,14 @@ check_pending:
 		}
 		sz = smd_cur_packet_size(apr_ch->ch);
 		if (sz < 0) {
-			pr_debug("pkt size is zero\n");
+			pr_info("pkt size is zero\n");
 			spin_unlock_irqrestore(&apr_ch->lock, flags);
 			return;
 		}
 		if (!len && !sz && !pkt_cnt)
 			goto check_write_avail;
 		if (!len) {
-			pr_debug("len = %d pkt_cnt = %d\n", len, pkt_cnt);
+			pr_info("len = %d pkt_cnt = %d\n", len, pkt_cnt);
 			spin_unlock_irqrestore(&apr_ch->lock, flags);
 			return;
 		}
@@ -124,7 +124,7 @@ check_pending:
 			return;
 		}
 		pkt_cnt++;
-		pr_debug("%d %d %d\n", len, sz, pkt_cnt);
+		pr_info("%d %d %d\n", len, sz, pkt_cnt);
 		if (apr_ch->func)
 			apr_ch->func(apr_ch->data, r_len, apr_ch->priv);
 		goto check_pending;
@@ -134,12 +134,12 @@ check_write_avail:
 		spin_unlock_irqrestore(&apr_ch->lock, flags);
 		break;
 	case SMD_EVENT_OPEN:
-		pr_debug("apr_tal: SMD_EVENT_OPEN\n");
+		pr_info("apr_tal: SMD_EVENT_OPEN\n");
 		apr_ch->smd_state = 1;
 		wake_up(&apr_ch->wait);
 		break;
 	case SMD_EVENT_CLOSE:
-		pr_debug("apr_tal: SMD_EVENT_CLOSE\n");
+		pr_info("apr_tal: SMD_EVENT_CLOSE\n");
 		break;
 	}
 }
@@ -170,7 +170,7 @@ struct apr_svc_ch_dev *apr_tal_open(uint32_t svc, uint32_t dest,
 			mutex_unlock(&apr_svc_ch[dl][dest][svc].m_lock);
 			return NULL;
 		}
-		pr_debug("apr_tal:Wakeup done\n");
+		pr_info("apr_tal:Wakeup done\n");
 		apr_svc_ch[dl][dest][svc].dest_state = 0;
 	}
 	rc = smd_named_open_on_edge(svc_names[dest][svc], dest,
@@ -196,9 +196,9 @@ struct apr_svc_ch_dev *apr_tal_open(uint32_t svc, uint32_t dest,
 
 	if (!apr_svc_ch[dl][dest][svc].dest_state) {
 		apr_svc_ch[dl][dest][svc].dest_state = 1;
-		pr_debug("apr_tal:Waiting for apr svc init\n");
+		pr_info("apr_tal:Waiting for apr svc init\n");
 		msleep(200);
-		pr_debug("apr_tal:apr svc init done\n");
+		pr_info("apr_tal:apr svc init done\n");
 	}
 	apr_svc_ch[dl][dest][svc].smd_state = 0;
 
@@ -229,6 +229,9 @@ static int apr_smd_probe(struct platform_device *pdev)
 {
 	int dest;
 	int clnt;
+
+	pr_info("%s id %d\n", __func__, pdev->id);
+	pr_info("%s name %s\n", __func__, pdev->name);
 
 	if (pdev->id == APR_DEST_MODEM) {
 		pr_info("apr_tal:Modem Is Up\n");
@@ -271,6 +274,8 @@ static int __init apr_tal_init(void)
 {
 	int i, j, k;
 
+	pr_info("%s\n", __func__);
+
 	for (i = 0; i < APR_DL_MAX; i++)
 		for (j = 0; j < APR_DEST_MAX; j++)
 			for (k = 0; k < APR_CLIENT_MAX; k++) {
@@ -282,6 +287,9 @@ static int __init apr_tal_init(void)
 			}
 	platform_driver_register(&apr_q6_driver);
 	platform_driver_register(&apr_modem_driver);
+
+	pr_info("%s registered platform drivers\n", __func__);
+
 	return 0;
 }
 device_initcall(apr_tal_init);

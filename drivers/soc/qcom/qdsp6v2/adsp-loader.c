@@ -80,7 +80,7 @@ static void adsp_loader_do(struct platform_device *pdev)
 					&img_name);
 
 	if (rc) {
-		dev_dbg(&pdev->dev,
+		dev_info(&pdev->dev,
 			"%s: loading default image ADSP\n", __func__);
 		goto load_adsp;
 	}
@@ -108,11 +108,11 @@ static void adsp_loader_do(struct platform_device *pdev)
 			/* Set the state of the ADSP in APR driver */
 			apr_set_modem_state(APR_SUBSYS_LOADED);
 		} else if (adsp_state == APR_SUBSYS_LOADED) {
-			dev_dbg(&pdev->dev,
+			dev_info(&pdev->dev,
 			"%s: MDSP state = %x\n", __func__, adsp_state);
 		}
 
-		dev_dbg(&pdev->dev, "%s: Q6/MDSP image is loaded\n", __func__);
+		dev_info(&pdev->dev, "%s: Q6/MDSP image is loaded\n", __func__);
 		return;
 	}
 load_adsp:
@@ -136,11 +136,11 @@ load_adsp:
 			/* Set the state of the ADSP in APR driver */
 			apr_set_q6_state(APR_SUBSYS_LOADED);
 		} else if (adsp_state == APR_SUBSYS_LOADED) {
-			dev_dbg(&pdev->dev,
+			dev_info(&pdev->dev,
 			"%s: ADSP state = %x\n", __func__, adsp_state);
 		}
 
-		dev_dbg(&pdev->dev, "%s: Q6/ADSP image is loaded\n", __func__);
+		dev_info(&pdev->dev, "%s: Q6/ADSP image is loaded\n", __func__);
 		return;
 	}
 fail:
@@ -177,7 +177,7 @@ static void adsp_loader_unload(struct platform_device *pdev)
 		return;
 
 	if (priv->pil_h) {
-		dev_dbg(&pdev->dev, "%s: calling subsystem put\n", __func__);
+		dev_info(&pdev->dev, "%s: calling subsystem put\n", __func__);
 		subsystem_put(priv->pil_h);
 		priv->pil_h = NULL;
 	}

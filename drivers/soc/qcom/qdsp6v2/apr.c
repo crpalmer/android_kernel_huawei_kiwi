@@ -203,7 +203,7 @@ EXPORT_SYMBOL_GPL(apr_get_q6_state);
 
 int apr_set_q6_state(enum apr_subsys_state state)
 {
-	pr_debug("%s: setting adsp state %d\n", __func__, state);
+	pr_info("%s: setting adsp state %d\n", __func__, state);
 	if (state < APR_SUBSYS_DOWN || state > APR_SUBSYS_LOADED)
 		return -EINVAL;
 	atomic_set(&q6.q6_state, state);
@@ -245,12 +245,12 @@ int apr_load_adsp_image(void)
 			pr_err("APR: Unable to load q6 image, error:%d\n", rc);
 		} else {
 			apr_set_q6_state(APR_SUBSYS_LOADED);
-			pr_debug("APR: Image is loaded, stated\n");
+			pr_info("APR: Image is loaded, stated\n");
 		}
 	} else if (apr_get_q6_state() == APR_SUBSYS_LOADED) {
-		pr_debug("APR: q6 image already loaded\n");
+		pr_info("APR: q6 image already loaded\n");
 	} else {
-		pr_debug("APR: cannot load state %d\n", apr_get_q6_state());
+		pr_info("APR: cannot load state %d\n", apr_get_q6_state());
 	}
 	mutex_unlock(&q6.lock);
 	return rc;
@@ -356,7 +356,7 @@ struct apr_svc *apr_register(char *dest, char *svc_name, apr_fn svc_fn,
 				pr_err("%s: adsp not up\n", __func__);
 			return NULL;
 		}
-		pr_debug("%s: adsp Up\n", __func__);
+		pr_info("%s: adsp Up\n", __func__);
 	} else if (dest_id == APR_DEST_MODEM) {
 		if (apr_get_modem_state() == APR_SUBSYS_DOWN) {
 			if (is_modem_up) {
@@ -364,14 +364,14 @@ struct apr_svc *apr_register(char *dest, char *svc_name, apr_fn svc_fn,
 					due to SSR, return", __func__);
 				return NULL;
 			}
-			pr_debug("%s: Wait for modem to bootup\n", __func__);
+			pr_info("%s: Wait for modem to bootup\n", __func__);
 			rc = apr_wait_for_device_up(APR_DEST_MODEM);
 			if (rc == 0) {
 				pr_err("%s: Modem is not Up\n", __func__);
 				return NULL;
 			}
 		}
-		pr_debug("%s: modem Up\n", __func__);
+		pr_info("%s: modem Up\n", __func__);
 	}
 
 	if (apr_get_svc(svc_name, domain_id, &client_id, &svc_idx, &svc_id)) {
@@ -406,7 +406,7 @@ struct apr_svc *apr_register(char *dest, char *svc_name, apr_fn svc_fn,
 	svc->dest_domain = domain_id;
 	if (src_port != 0xFFFFFFFF) {
 		temp_port = ((src_port >> 8) * 8) + (src_port & 0xFF);
-		pr_debug("port = %d t_port = %d\n", src_port, temp_port);
+		pr_info("port = %d t_port = %d\n", src_port, temp_port);
 		if (temp_port >= APR_MAX_PORTS || temp_port < 0) {
 			pr_err("APR: temp_port out of bounds\n");
 			mutex_unlock(&svc->m_lock);
@@ -450,13 +450,13 @@ void apr_cb_func(void *buf, int len, void *priv)
 	int temp_port = 0;
 	uint32_t *ptr;
 
-	pr_debug("APR2: len = %d\n", len);
+	pr_info("APR2: len = %d\n", len);
 	ptr = buf;
-	pr_debug("\n*****************\n");
+	pr_info("\n*****************\n");
 	for (i = 0; i < len/4; i++)
-		pr_debug("%x  ", ptr[i]);
-	pr_debug("\n");
-	pr_debug("\n*****************\n");
+		pr_info("%x  ", ptr[i]);
+	pr_info("\n");
+	pr_info("\n*****************\n");
 
 	if (!buf || len <= APR_HDR_SIZE) {
 		pr_err("APR: Improper apr pkt received:%p %d\n", buf, len);
@@ -531,11 +531,11 @@ void apr_cb_func(void *buf, int len, void *priv)
 	if (src == APR_DEST_MAX)
 		return;
 
-	pr_debug("src =%d clnt = %d\n", src, clnt);
+	pr_info("src =%d clnt = %d\n", src, clnt);
 	apr_client = &client[src][clnt];
 	for (i = 0; i < APR_SVC_MAX; i++)
 		if (apr_client->svc[i].id == svc) {
-			pr_debug("%d\n", apr_client->svc[i].id);
+			pr_info("%d\n", apr_client->svc[i].id);
 			c_svc = &apr_client->svc[i];
 			break;
 		}
@@ -544,8 +544,8 @@ void apr_cb_func(void *buf, int len, void *priv)
 		pr_err("APR: service is not registered\n");
 		return;
 	}
-	pr_debug("svc_idx = %d\n", i);
-	pr_debug("%x %x %x %p %p\n", c_svc->id, c_svc->dest_id,
+	pr_info("svc_idx = %d\n", i);
+	pr_info("%x %x %x %p %p\n", c_svc->id, c_svc->dest_id,
 		 c_svc->client_id, c_svc->fn, c_svc->priv);
 	data.payload_size = hdr->pkt_size - hdr_size;
 	data.opcode = hdr->opcode;
@@ -558,7 +558,7 @@ void apr_cb_func(void *buf, int len, void *priv)
 		data.payload = (char *)hdr + hdr_size;
 
 	temp_port = ((data.dest_port >> 8) * 8) + (data.dest_port & 0xFF);
-	pr_debug("port = %d t_port = %d\n", data.src_port, temp_port);
+	pr_info("port = %d t_port = %d\n", data.src_port, temp_port);
 	if (c_svc->port_cnt && c_svc->port_fn[temp_port])
 		c_svc->port_fn[temp_port](&data,  c_svc->port_priv[temp_port]);
 	else if (c_svc->fn)
@@ -592,7 +592,7 @@ int apr_get_svc(const char *svc_name, int domain_id, int *client_id,
 		}
 	}
 
-	pr_debug("%s: svc_name = %s c_id = %d domain_id = %d\n",
+	pr_info("%s: svc_name = %s c_id = %d domain_id = %d\n",
 		 __func__, svc_name, *client_id, domain_id);
 	if (i == size) {
 		pr_err("%s: APR: Wrong svc name %s\n", __func__, svc_name);
@@ -609,7 +609,7 @@ static void apr_reset_deregister(struct work_struct *work)
 			container_of(work, struct apr_reset_work, work);
 
 	handle = apr_reset->handle;
-	pr_debug("%s:handle[%p]\n", __func__, handle);
+	pr_info("%s:handle[%p]\n", __func__, handle);
 	apr_deregister(handle);
 	kfree(apr_reset);
 }
@@ -642,7 +642,7 @@ int apr_deregister(void *handle)
 		client[dest_id][client_id].svc_cnt--;
 		if (!client[dest_id][client_id].svc_cnt) {
 			svc->need_reset = 0x0;
-			pr_debug("%s: service is reset %p\n", __func__, svc);
+			pr_info("%s: service is reset %p\n", __func__, svc);
 		}
 	}
 
@@ -670,7 +670,7 @@ void apr_reset(void *handle)
 
 	if (!handle)
 		return;
-	pr_debug("%s: handle[%p]\n", __func__, handle);
+	pr_info("%s: handle[%p]\n", __func__, handle);
 
 	if (apr_reset_workqueue == NULL) {
 		pr_err("%s: apr_reset_workqueue is NULL\n", __func__);
@@ -756,22 +756,22 @@ static int modem_notifier_cb(struct notifier_block *this, unsigned long code,
 
 	switch (code) {
 	case SUBSYS_BEFORE_SHUTDOWN:
-		pr_debug("M-Notify: Shutdown started\n");
+		pr_info("M-Notify: Shutdown started\n");
 		break;
 	case SUBSYS_AFTER_SHUTDOWN:
-		pr_debug("M-Notify: Shutdown Completed\n");
+		pr_info("M-Notify: Shutdown Completed\n");
 		apr_set_modem_state(APR_SUBSYS_DOWN);
 		dispatch_event(code, APR_DEST_MODEM);
 		break;
 	case SUBSYS_BEFORE_POWERUP:
-		pr_debug("M-notify: Bootup started\n");
+		pr_info("M-notify: Bootup started\n");
 		break;
 	case SUBSYS_AFTER_POWERUP:
 		if (apr_cmpxchg_modem_state(APR_SUBSYS_DOWN, APR_SUBSYS_UP) ==
 						APR_SUBSYS_DOWN)
 			wake_up(&modem_wait);
 		is_modem_up = 1;
-		pr_debug("M-Notify: Bootup Completed\n");
+		pr_info("M-Notify: Bootup Completed\n");
 		break;
 	default:
 		pr_err("M-Notify: General: %lu\n", code);
@@ -799,7 +799,7 @@ static int lpass_notifier_cb(struct notifier_block *this, unsigned long code,
 
 	switch (code) {
 	case SUBSYS_BEFORE_SHUTDOWN:
-		pr_debug("L-Notify: Shutdown started\n");
+		pr_info("L-Notify: Shutdown started\n");
 		apr_set_q6_state(APR_SUBSYS_DOWN);
 		dispatch_event(code, APR_DEST_QDSP6);
 		if (data && data->crashed) {
@@ -807,22 +807,22 @@ static int lpass_notifier_cb(struct notifier_block *this, unsigned long code,
 			scm_call_atomic1(SCM_SVC_UTIL, SCM_Q6_NMI_CMD, 0x1);
 			/* The write should go through before q6 is shutdown */
 			mb();
-			pr_debug("L-Notify: Q6 NMI was sent.\n");
+			pr_info("L-Notify: Q6 NMI was sent.\n");
 		}
 		break;
 	case SUBSYS_AFTER_SHUTDOWN:
 		powered_on = false;
-		pr_debug("L-Notify: Shutdown Completed\n");
+		pr_info("L-Notify: Shutdown Completed\n");
 		break;
 	case SUBSYS_BEFORE_POWERUP:
-		pr_debug("L-notify: Bootup started\n");
+		pr_info("L-notify: Bootup started\n");
 		break;
 	case SUBSYS_AFTER_POWERUP:
 		if (apr_cmpxchg_q6_state(APR_SUBSYS_DOWN,
 				APR_SUBSYS_LOADED) == APR_SUBSYS_DOWN)
 			wake_up(&dsp_wait);
 		powered_on = true;
-		pr_debug("L-Notify: Bootup Completed\n");
+		pr_info("L-Notify: Bootup Completed\n");
 		break;
 	default:
 		pr_err("L-Notify: Generel: %lu\n", code);
