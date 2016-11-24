@@ -26,7 +26,6 @@
 #include <linux/delay.h>
 #include <linux/input.h>
 #include <linux/gpio.h>
-#include <linux/log_jank.h>
 #include <linux/hw_lcd_common.h>
 #include <linux/regulator/consumer.h>
 #include "synaptics_dsx.h"

@@ -50,7 +50,6 @@
 #include <linux/mmc/dsm_sdcard.h>
 #endif
 #ifdef CONFIG_HUAWEI_DSM
-#include <linux/store_log.h>
 extern u64 device_index;
 #include "../card/queue.h"
 #include <linux/mmc/dsm_emmc.h>
