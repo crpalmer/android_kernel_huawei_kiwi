@@ -46,48 +46,6 @@
 #define   MAX_MSG_SIZE     256
 #endif
 
-#ifndef CONFIG_HUAWEI_LOG_PARSER
-/**
- * struct logger_log - represents a specific log, such as 'main' or 'radio'
- * @buffer:	The actual ring buffer
- * @misc:	The "misc" device representing the log
- * @wq:		The wait queue for @readers
- * @readers:	This log's readers
- * @mutex:	The mutex that protects the @buffer
- * @w_off:	The current write head offset
- * @head:	The head, or location that readers start reading at.
- * @size:	The size of the log
- * @logs:	The list of log channels
- *
- * This structure lives from module insertion until module removal, so it does
- * not need additional reference counting. The structure is protected by the
- * mutex 'mutex'.
- */
-struct logger_log {
-	unsigned char		*buffer;
-	struct miscdevice	misc;
-	wait_queue_head_t	wq;
-	struct list_head	readers;
-	struct mutex		mutex;
-	size_t			w_off;
-	size_t			head;
-	size_t			size;
-	struct list_head	logs;
-};
-#endif
-#ifdef CONFIG_HUAWEI_LOG_PARSER
-extern struct logger_info_list *log_info_list;
-
-extern void save_head_off_in_logger_info(struct logger_log *);
-
-extern int populate_logger_info_list(char* log_name,
-	unsigned int buffer_phy_addr, int size);
-
-extern void save_logger_info_in_IMEM(void);
-
-extern void populate_kmsg_info_into_logger_info_list(void);
-#endif
-
 static LIST_HEAD(log_list);
 
 
@@ -430,9 +388,6 @@ static void fix_up_readers(struct logger_log *log, size_t len)
 
 	if (is_between(old, new, log->head)) {
 		log->head = get_next_entry(log, log->head, len);
-#ifdef CONFIG_HUAWEI_LOG_PARSER
-		save_head_off_in_logger_info(log);
-#endif
 	}
 
 	list_for_each_entry(reader, &log->readers, list)
@@ -830,9 +785,6 @@ static long logger_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		list_for_each_entry(reader, &log->readers, list)
 			reader->r_off = log->w_off;
 		log->head = log->w_off;
-#ifdef CONFIG_HUAWEI_LOG_PARSER
-		save_head_off_in_logger_info(log);
-#endif
 		ret = 0;
 		break;
 	case LOGGER_GET_VERSION:
@@ -878,9 +830,6 @@ static int __init create_log(char *log_name, int size)
 	int ret = 0;
 	struct logger_log *log;
 	unsigned char *buffer;
-#ifdef CONFIG_HUAWEI_LOG_PARSER
-	unsigned int buffer_phy_addr;
-#endif
 #ifdef CONFIG_HUAWEI_KERNEL_DEBUG
 	buffer = kzalloc((unsigned int)size, GFP_KERNEL);
 #else
@@ -894,13 +843,6 @@ static int __init create_log(char *log_name, int size)
 		ret = -ENOMEM;
 		goto out_free_buffer;
 	}
-
-#ifdef CONFIG_HUAWEI_LOG_PARSER
-	buffer_phy_addr = virt_to_phys(buffer);
-	pr_info("HUAWEI_LOGGER, name:%s size=%d virt:0x%p, phy:0x%x\n",
-		log_name, size, (void *)buffer, buffer_phy_addr);
-	populate_logger_info_list(log_name, buffer_phy_addr, size);
-#endif
 
 	log->buffer = buffer;
 
@@ -919,10 +861,6 @@ static int __init create_log(char *log_name, int size)
 	mutex_init(&log->mutex);
 	log->w_off = 0;
 	log->head = 0;
-
-#ifdef CONFIG_HUAWEI_LOG_PARSER
-	save_head_off_in_logger_info(log);
-#endif
 
 	log->size = size;
 
@@ -1052,11 +990,6 @@ static int __init logger_init(void)
 {
 	int ret;
 
-#ifdef CONFIG_HUAWEI_LOG_PARSER
-	save_logger_info_in_IMEM();
-	populate_kmsg_info_into_logger_info_list();
-#endif
-
 	ret = create_log(LOGGER_LOG_MAIN, CONFIG_HUAWEI_LOGCAT_SIZE*1024);
 	if (unlikely(ret))
 		goto out;
@@ -1097,9 +1030,6 @@ static void __exit logger_exit(void)
 		kfree(current_log->misc.name);
 		list_del(&current_log->logs);
 		kfree(current_log);
-#ifdef CONFIG_HUAWEI_LOG_PARSER
-		kfree(log_info_list);
-#endif
 	}
 }
 
