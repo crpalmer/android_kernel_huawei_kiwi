@@ -157,9 +157,6 @@ struct charge_device_info
     int          cold_bat_decidegc;
     int          running_test_settled_status;
     int          ibus_mpp;
-#ifdef CONFIG_LOG_JANK
-    struct work_struct      usbin_janklog_work;
-#endif
 };
 
 /****************variable and function declarationn area******************/

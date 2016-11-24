@@ -76,9 +76,6 @@ struct logger_entry {
 #define LOGGER_LOG_MAIN		"log_main"	/* everything else */
 #define LOGGER_LOG_EXCEPTION	"hwlog_exception" /* exception */
 
-#ifdef CONFIG_LOG_JANK
-#define LOGGER_LOG_JANK    "hwlog_jank" /* system performance messages */
-#endif
 #define LOGGER_ENTRY_MAX_PAYLOAD	4076
 
 #define __LOGGERIO	0xAE

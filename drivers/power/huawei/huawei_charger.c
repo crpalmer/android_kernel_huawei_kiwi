@@ -36,9 +36,6 @@
 #include <linux/irqchip/qpnp-int.h>
 #include <linux/of_batterydata.h>
 #include <linux/qpnp/qpnp-adc.h>
-#ifdef CONFIG_LOG_JANK
-#include <linux/log_jank.h>
-#endif
 #ifdef CONFIG_HUAWEI_DSM
 #include <dsm/dsm_pub.h>
 #endif
@@ -754,22 +751,6 @@ static void charge_nff_work(struct work_struct *work)
 
     return ;
 }
-#ifdef CONFIG_LOG_JANK
-static void huawei_usbin_janklog_work_func(struct work_struct *work)
-{
-    int usb_present;
-    struct charge_device_info *di = container_of(work, struct charge_device_info,usbin_janklog_work);
-    usb_present = huawei_charger_vbus_is_exist(di);
-    if(usb_present)
-    {
-        LOG_JANK_D(JLID_USBCHARGING_START,"%s","JL_USBCHARGING_START");
-    }
-    else
-    {
-        LOG_JANK_D(JLID_USBCHARGING_END,"%s","JL_USBCHARGING_END");
-    }
-}
-#endif
 #if CONFIG_SYSFS
 #define CHARGE_SYSFS_FIELD(_name, n, m, store)                \
 {                                                   \
@@ -1611,9 +1592,6 @@ static irqreturn_t huawei_charger_usbin_valid_irq_handler(int irq, void *data)
     usb_present = huawei_charger_vbus_is_exist(di);
     pmu_log_info("usbin-valid triggered: %d\n", usb_present);
 
-#ifdef CONFIG_LOG_JANK
-    schedule_work(&di->usbin_janklog_work);
-#endif
 #ifdef CONFIG_HUAWEI_PMU_DSM
     usbin_valid_count_invoke();
 #endif
@@ -1887,9 +1865,6 @@ static int charge_probe(struct spmi_device *pdev)
     di->sysfs_data.usb_current = 0;
 
     INIT_DELAYED_WORK(&di->nff_work, charge_nff_work); //For nff log, to do
-#ifdef CONFIG_LOG_JANK
-    INIT_WORK(&di->usbin_janklog_work, huawei_usbin_janklog_work_func);
-#endif
     if(di->use_cbl_interrupt)
     {
         di->irqs.irq = hw_get_cblpwr_state_irq();
@@ -2015,9 +1990,6 @@ static int charge_remove(struct spmi_device *pdev)
     cancel_delayed_work_sync(&di->nff_work);
     wake_lock_destroy(&di->led_wake_lock);
     wake_lock_destroy(&di->chg_wake_lock);
-#ifdef CONFIG_LOG_JANK
-    cancel_work_sync(&di->usbin_janklog_work);
-#endif
     if (NULL != di->ops)
     {
         di->ops = NULL;

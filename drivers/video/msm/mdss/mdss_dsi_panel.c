@@ -24,9 +24,6 @@
 
 #include "mdss_dsi.h"
 /*add boe esd  solutions*/
-#ifdef CONFIG_LOG_JANK
-#include <linux/log_jank.h>
-#endif
 #include <misc/app_info.h>
 #include <linux/hw_lcd_common.h>
 #include <hw_lcd_debug.h>
@@ -932,9 +929,6 @@ end:
 /*delete cpuget() to avoid panic*/
 	LCD_LOG_INFO("%s: panel_on_time = %u\n",
 			__func__,jiffies_to_msecs(jiffies-timeout));
-#ifdef CONFIG_LOG_JANK
-    LOG_JANK_D(JLID_KERNEL_LCD_POWER_ON, "%s", "JL_KERNEL_LCD_POWER_ON");
-#endif
 	return 0;
 }
 
@@ -1005,9 +999,6 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 end:
 	pinfo->blank_state = MDSS_PANEL_BLANK_BLANK;
 	pr_debug("%s:-\n", __func__);
-#ifdef CONFIG_LOG_JANK
-    LOG_JANK_D(JLID_KERNEL_LCD_POWER_OFF, "%s", "JL_KERNEL_LCD_POWER_OFF");
-#endif
 	return 0;
 }
 

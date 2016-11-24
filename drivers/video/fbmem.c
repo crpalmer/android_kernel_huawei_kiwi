@@ -35,9 +35,6 @@
 /* Difference synchronization to 8939-FEIMA-M-GP between LCD module 8939-L-GP and 8939-FEIMA-M-GP . */
 /*open tp gesture can't wake up screen probability*/
 #include <linux/hw_lcd_common.h>
-#ifdef CONFIG_LOG_JANK
-#include <linux/log_jank.h>
-#endif
 #include <asm/fb.h>
 
    extern unsigned int cpufreq_get(unsigned int cpu);
@@ -1082,16 +1079,6 @@ fb_blank(struct fb_info *info, int blank)
 
  	if (blank > FB_BLANK_POWERDOWN)
  		blank = FB_BLANK_POWERDOWN;
-#ifdef CONFIG_LOG_JANK
-    if(blank > 0)
-    {
-        LOG_JANK_V(JLID_HWC_LCD_BLANK_START, "%s", "JL_HWC_LCD_BLANK_START");
-    }
-    else
-    {
-        LOG_JANK_V(JLID_HWC_LCD_UNBLANK_START, "%s", "JL_HWC_LCD_UNBLANK_START");
-    }
-#endif
 
 	event.info = info;
 	event.data = &blank;
@@ -1132,16 +1119,6 @@ fb_blank(struct fb_info *info, int blank)
 	}
 #ifdef CONFIG_HUAWEI_LCD
 	LCD_LOG_INFO("Exit %s, blank_mode = [%d].\n",__func__,blank);
-#endif
-#ifdef CONFIG_LOG_JANK
-    if(blank > 0)
-    {
-        LOG_JANK_V(JLID_HWC_LCD_BLANK_END, "%s", "JL_HWC_LCD_BLANK_END");
-    }
-    else
-    {
-        LOG_JANK_V(JLID_HWC_LCD_UNBLANK_END, "%s", "JL_HWC_LCD_UNBLANK_END");
-    }
 #endif
  	return ret;
 }

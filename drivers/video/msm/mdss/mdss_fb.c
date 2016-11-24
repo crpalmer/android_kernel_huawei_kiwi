@@ -53,9 +53,6 @@
 
 #include "mdss_fb.h"
 #include "mdss_mdp_splash_logo.h"
-#ifdef CONFIG_LOG_JANK
-#include <linux/log_jank.h>
-#endif
 #include <linux/hw_lcd_common.h>
 #ifdef CONFIG_HUAWEI_LCD
 #include "hw_lcd_debug.h"
@@ -1515,16 +1512,6 @@ void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl)
 			LCD_LOG_INFO("%s: set backlight time = %u\n",
 			__func__,jiffies_to_msecs(jiffies-timeout+HZ/10));
 		}
-#ifdef CONFIG_LOG_JANK
-		if(temp ==0)
-		{
-           LOG_JANK_V(JLID_HWC_LCD_BACKLIGHT_OFF, "%s", "JL_HWC_LCD_BACKLIGHT_OFF");
-		}
-		else if ((mfd->bl_level_scaled == 0)&&(temp !=0))
-        {
-            LOG_JANK_D(JLID_KERNEL_LCD_BACKLIGHT_ON,"%s,%d", "JL_KERNEL_LCD_RESUME",temp);
-        }
-#endif
 	/*schedule esd delay work again*/
 	#ifdef CONFIG_HUAWEI_LCD
 		mdss_dsi_status_check_ctl(mfd,true);
@@ -1564,9 +1551,6 @@ void mdss_fb_update_backlight_wq_handler(struct work_struct *work)
 /*delete cpuget() to avoid panic*/
                      LCD_LOG_INFO("%s: set backlight time = %u\n",
 			 __func__,jiffies_to_msecs(jiffies-timeout));
-#ifdef CONFIG_LOG_JANK
-             LOG_JANK_D(JLID_KERNEL_LCD_BACKLIGHT_ON,"%s,%d", "JL_KERNEL_LCD_RESUME",mfd->bl_level);
-#endif
 		}
 	}
 	mfd->bl_updated = 1;
@@ -3244,9 +3228,6 @@ static int __mdss_fb_perform_commit(struct msm_fb_data_type *mfd)
 		do_gettimeofday(&lcd_pwr_status.tvl_set_frame);
 		time_to_tm(lcd_pwr_status.tvl_set_frame.tv_sec, 0, &lcd_pwr_status.tm_set_frame);
 		LCD_LOG_INFO("%s:begin to display the first frame.\n",__func__);
-#ifdef CONFIG_LOG_JANK
-        LOG_JANK_V(JLID_HWC_LCD_FIRSTFRAME_START, "%s", "JL_HWC_LCD_FIRSTFRAME_START");
-#endif
 	}
 #endif
 	if (!sync_pt_data->async_wait_fences)

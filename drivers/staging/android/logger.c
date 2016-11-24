@@ -33,17 +33,8 @@
 
 #include <asm/ioctls.h>
 
-#ifdef CONFIG_LOG_JANK
-#include <linux/log_jank.h>
-#endif
-
 #ifndef CONFIG_LOGCAT_SIZE
 #define CONFIG_LOGCAT_SIZE 256
-#endif
-
-#ifdef CONFIG_LOG_JANK
-#define   MAX_TAG_SIZE     128
-#define   MAX_MSG_SIZE     256
 #endif
 
 static LIST_HEAD(log_list);
@@ -887,98 +878,6 @@ out_free_buffer:
 	vfree(buffer);
 	return ret;
 }
-#ifdef CONFIG_LOG_JANK
-int log_to_jank(int tag, int prio, const char* fmt, ...)
-{
-	struct logger_log *log = get_log_from_name(LOGGER_LOG_JANK);
-	struct logger_entry header;
-
-	char  msg[MAX_MSG_SIZE];
-	struct timespec now;
-	va_list args;
-	ssize_t ret = 0;
-	struct timespec         upts, realts;
-	u64  uptime;
-	u64  realtime;
-	struct iovec vec[5];
-	struct iovec *iov = vec;
-
-	int nr_segs = sizeof(vec)/sizeof(vec[0]);
-	if (unlikely(!tag || !fmt)) {
-        pr_err("jank_log: invalid arguments\n");
-        return 0;
-    }
-	do_posix_clock_monotonic_gettime(&upts);
-	realts = upts;
-	monotonic_to_bootbased(&realts);
-	uptime = (u64)upts.tv_sec*1000 + upts.tv_nsec/1000000;
-	realtime = (u64)realts.tv_sec*1000 + realts.tv_nsec/1000000;
-
-    memset(msg,0,sizeof(msg));
-    va_start(args, fmt);
-	vscnprintf(msg, sizeof(msg), fmt, args);
-	va_end(args);
-
-	/*according to the arguments, fill the iovec struct  */
-	vec[0].iov_base   =  &prio;
-	vec[0].iov_len    = 2;
-
-	vec[1].iov_base   = &tag;
-	vec[1].iov_len    =  2;
-
-	vec[2].iov_base = &uptime;
-	vec[2].iov_len  = sizeof(uptime);
-
-	vec[3].iov_base = &realtime;
-	vec[3].iov_len  = sizeof(realtime);
-
-	vec[4].iov_base   = (void *) msg;
-	vec[4].iov_len    = strlen(msg) + 1;
-
-	now = current_kernel_time();
-	header.pid = current->tgid;;
-	header.tid = current->pid;;
-	header.sec = now.tv_sec;
-	header.nsec = now.tv_nsec;
-	header.euid = current_euid();
-	header.len = min(calc_iovc_ki_left(vec,nr_segs),LOGGER_ENTRY_MAX_PAYLOAD);
-	header.hdr_size = sizeof(struct logger_entry);
-
-	/* null writes succeed, return zero */
-	if (unlikely(!header.len))
-		return 0;
-
-	mutex_lock(&log->mutex);
-
-	/*
-	 * Fix up any readers, pulling them forward to the first readable
-	 * entry after (what will be) the new write offset. We do this now
-	 * because if we partially fail, we can end up with clobbered log
-	 * entries that encroach on readable buffer.
-	 */
-	fix_up_readers(log,  sizeof(struct logger_entry) + header.len);
-	do_write_log(log, &header, sizeof(struct logger_entry));
-	while (nr_segs-- > 0) {
-		size_t len;
-		/* figure out how much of this vector we can keep */
-		len = min_t(size_t, iov->iov_len, header.len - ret);
-		/* write out this segment's payload */
-		do_write_log(log, iov->iov_base, len);
-
-		iov++;
-		ret += len;
-
-	}
-
-	mutex_unlock(&log->mutex);
-
-	/* wake up any blocked readers */
-	wake_up_interruptible(&log->wq);
-
-	return ret;
-}
-EXPORT_SYMBOL(log_to_jank);
-#endif
 
 #ifdef CONFIG_HUAWEI_KERNEL_DEBUG
 #define CONFIG_HUAWEI_LOGCAT_SIZE	(1024)
@@ -1008,12 +907,6 @@ static int __init logger_init(void)
 	ret = create_log(LOGGER_LOG_EXCEPTION, CONFIG_LOGCAT_SIZE*1024);
 	if (unlikely(ret))
 		goto out;
-
-#ifdef CONFIG_LOG_JANK
-	ret = create_log(LOGGER_LOG_JANK, CONFIG_LOGCAT_SIZE*1024);
-	if (unlikely(ret))
-		goto out;
-#endif
 
 out:
 	return ret;

@@ -3282,7 +3282,6 @@ static int synaptics_rmi4_f11_gesture_report(struct synaptics_rmi4_data *rmi4_da
 				&reprot_gesture_key_value,
 				&reprot_gesture_point_num,
 				0);
-				LOG_JANK_D(JLID_WAKEUP_DBCLICK,"JLID_WAKEUP_DBCLICK");
 			break;
 		case LINEAR_SLIDE_DETECTED:
 			if (!(APP_ENABLE_LINEAR & rmi4_data->easy_wakeup_gesture)) {
@@ -3538,7 +3537,6 @@ static int synaptics_rmi4_f11_abs_report(struct synaptics_rmi4_data *rmi4_data,
 		if(true == rmi4_data->sleep_gesture_flag)//work only when suspended
 		{
 			tp_log_vdebug("%s:wake up gesture mode  in!sleep_gesture_flag = %d \n",__func__, rmi4_data->sleep_gesture_flag);
-			LOG_JANK_D(JLID_TP_GESTURE_KEY,"JLID_TP_GESTURE_KEY");
 			return synaptics_rmi4_f11_gesture_report(rmi4_data,fhandler);
 		}
 		else if(true == rmi4_data->palm_enabled)//work only when resumed

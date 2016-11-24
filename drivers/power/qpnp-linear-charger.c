@@ -38,9 +38,6 @@ static struct qpnp_lbc_chip *global_chip;
 #include <linux/power/huawei_charger.h>
 #include <linux/charger_core.h>
 #endif
-#ifdef CONFIG_LOG_JANK
-#include <linux/log_jank.h>
-#endif
 #define CREATE_MASK(NUM_BITS, POS) \
 	((unsigned char) (((1 << (NUM_BITS)) - 1) << (POS)))
 #define LBC_MASK(MSB_BIT, LSB_BIT) \
@@ -423,9 +420,6 @@ struct qpnp_lbc_chip {
 	struct wake_lock		chg_wake_lock;
 #endif
 	  /* deleted 1 line */
-#ifdef CONFIG_LOG_JANK
-	struct work_struct		usbin_janklog_work;
-#endif
 };
 
 #ifdef CONFIG_HUAWEI_KERNEL
@@ -2820,10 +2814,6 @@ static irqreturn_t qpnp_lbc_usbin_valid_irq_handler(int irq, void *_chip)
 	usb_present = qpnp_lbc_is_usb_chg_plugged_in(chip);
 	pmu_log_info("usbin-valid triggered: %d\n", usb_present);
 
-#ifdef CONFIG_LOG_JANK
-	schedule_work(&chip->usbin_janklog_work);
-#endif
-
 #ifdef CONFIG_HUAWEI_PMU_DSM
 	usbin_valid_count_invoke();
 #endif
@@ -3331,25 +3321,6 @@ static int qpnp_chg_load_battery_data(struct qpnp_lbc_chip *chip)
 	return 0;
 }
 #endif
-#ifdef CONFIG_LOG_JANK
-static void usbin_janklog_work_func(struct work_struct *work)
-{
-	int usb_present;
-	struct qpnp_lbc_chip	*chip =
-		container_of(work, struct qpnp_lbc_chip, usbin_janklog_work);
-
-	usb_present = qpnp_lbc_is_usb_chg_plugged_in(chip);
-	if(usb_present)
-	{
-		LOG_JANK_D(JLID_USBCHARGING_START,"%s","JL_USBCHARGING_START");
-	}
-	else
-	{
-		LOG_JANK_D(JLID_USBCHARGING_END,"%s","JL_USBCHARGING_END");
-	}
-
-}
-#endif
 
 #define IBAT_TRIM			-300
 static void qpnp_lbc_vddtrim_work_fn(struct work_struct *work)
@@ -3660,9 +3631,6 @@ static int qpnp_lbc_probe(struct spmi_device *spmi)
 	}
 #endif
 
-#ifdef CONFIG_LOG_JANK
-	INIT_WORK(&chip->usbin_janklog_work, usbin_janklog_work_func);
-#endif
 	rc = qpnp_lbc_request_irqs(chip);
 	if (rc) {
 		pr_err("unable to initialize LBC MISC rc=%d\n", rc);
@@ -3727,9 +3695,6 @@ static int qpnp_lbc_remove(struct spmi_device *spmi)
 	}
 	wake_lock_destroy(&chip->led_wake_lock);
 	wake_lock_destroy(&chip->chg_wake_lock);
-#endif
-#ifdef CONFIG_LOG_JANK
-	cancel_work_sync(&chip->usbin_janklog_work);
 #endif
 
 	/* deleted 1 line */
