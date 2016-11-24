@@ -93,6 +93,7 @@ static size_t logger_offset(struct logger_log *log, size_t n)
 	return n & (log->size - 1);
 }
 
+
 /*
  * file_get_log - Given a file structure, return the associated log
  *
@@ -404,9 +405,8 @@ static void fix_up_readers(struct logger_log *log, size_t len)
 	size_t new = logger_offset(log, old + len);
 	struct logger_reader *reader;
 
-	if (is_between(old, new, log->head)) {
+	if (is_between(old, new, log->head))
 		log->head = get_next_entry(log, log->head, len);
-	}
 
 	list_for_each_entry(reader, &log->readers, list)
 		if (is_between(old, new, reader->r_off))
@@ -755,6 +755,7 @@ static int __init create_log(char *log_name, int size)
 	int ret = 0;
 	struct logger_log *log;
 	unsigned char *buffer;
+
 	buffer = vmalloc(size);
 	if (buffer == NULL)
 		return -ENOMEM;
@@ -764,7 +765,6 @@ static int __init create_log(char *log_name, int size)
 		ret = -ENOMEM;
 		goto out_free_buffer;
 	}
-
 	log->buffer = buffer;
 
 	log->misc.minor = MISC_DYNAMIC_MINOR;
@@ -782,7 +782,6 @@ static int __init create_log(char *log_name, int size)
 	mutex_init(&log->mutex);
 	log->w_off = 0;
 	log->head = 0;
-
 	log->size = size;
 
 	INIT_LIST_HEAD(&log->logs);
