@@ -117,11 +117,6 @@ config MMC_FFU
 	  Field firmware updates (FFU) enables features enhancment
 	  in the field.
 
-config HW_SD_HEALTH_DETECT
-	bool "SD HEALTH DIAG SUPPORT"
-	default y
-	help
-	  This is an option to diag sd health status.
 config HW_EMMC_PHYSICS_PROTECT
       bool " EMMC PHYSICS PROTEC"
       default y

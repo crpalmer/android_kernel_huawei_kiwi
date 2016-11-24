@@ -57,10 +57,6 @@ struct dsm_sdcard_cmd_log dsm_sdcard_cmd_logs[] =
 #define UHS_SDR25_MIN_DTR	(25 * 1000 * 1000)
 #define UHS_SDR12_MIN_DTR	(12.5 * 1000 * 1000)
 
-#ifdef CONFIG_HW_SD_HEALTH_DETECT
-static unsigned int g_sd_speed_class = 0;
-#endif
-
 static const unsigned int tran_exp[] = {
 	10000,		100000,		1000000,	10000000,
 	0,		0,		0,		0
@@ -284,10 +280,6 @@ static int mmc_read_ssr(struct mmc_card *card)
 
 #ifdef CONFIG_HUAWEI_KERNEL
 	card->ssr.speed_class = UNSTUFF_BITS(ssr, 440 - 384, 8); 
-#endif
-
-#ifdef CONFIG_HW_SD_HEALTH_DETECT
-	g_sd_speed_class = card->ssr.speed_class;
 #endif
 
 	/*
@@ -822,9 +814,6 @@ MMC_DEV_ATTR(serial, "0x%08x\n", card->cid.serial);
 #ifdef CONFIG_HUAWEI_KERNEL
 MMC_DEV_ATTR(speed_class, "0x%08x\n", card->ssr.speed_class); 
 #endif
-#ifdef CONFIG_HW_SD_HEALTH_DETECT
-MMC_DEV_ATTR(state, "0x%08x\n", card->state); 
-#endif
 
 static struct attribute *sd_std_attrs[] = {
 	&dev_attr_cid.attr,
@@ -841,9 +830,6 @@ static struct attribute *sd_std_attrs[] = {
 	&dev_attr_serial.attr,
 #ifdef CONFIG_HUAWEI_KERNEL
 	&dev_attr_speed_class.attr,
-#endif
-#ifdef CONFIG_HW_SD_HEALTH_DETECT
-	&dev_attr_state.attr, 
 #endif
 	NULL,
 };
@@ -1633,31 +1619,4 @@ char *dsm_sdcard_get_log(int cmd,int err)
 		
 }
 EXPORT_SYMBOL(dsm_sdcard_get_log);
-#endif
-
-#ifdef CONFIG_HW_SD_HEALTH_DETECT
-unsigned int mmc_get_sd_speed(void)
-{
-   unsigned int speed = 0;
-   switch(g_sd_speed_class){
-   case 0x00:
-        speed = 0;
-        break;
-   case 0x01:
-        speed = 2;
-        break;
-   case 0x02:
-        speed = 4;
-        break;
-   case 0x03:
-        speed = 6;
-        break;
-   case 0x04:
-        speed = 10;
-        break;
-   default:
-        speed = 2;
-}
-   return speed;
-}
 #endif
