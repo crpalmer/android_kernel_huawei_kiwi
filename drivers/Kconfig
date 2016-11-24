@@ -194,5 +194,6 @@ source "drivers/firmware/Kconfig"
 
 source "drivers/huawei_platform/Kconfig"
 
+source "drivers/hwusb/Kconfig"
 source "drivers/dsm/Kconfig"
 endmenu
