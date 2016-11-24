@@ -32,7 +32,6 @@
 #include "internal.h"
 #ifdef CONFIG_DUMP_SYS_INFO
 #include <linux/module.h>
-#include <linux/srecorder.h>
 #endif
 
 struct bdev_inode {

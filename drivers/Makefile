@@ -174,8 +174,6 @@ obj-$(CONFIG_HUAWEI_FACTORY_INFO) += hw_fac_info/
 obj-$(CONFIG_HUAWEI_GOLDENEYE) += goldeneye/
 obj-y				+= huawei/
 
-obj-$(CONFIG_SRECORDER)     += srecorder/
-
 obj-$(CONFIG_HUAWEI_DRIVERS)    += huawei_platform/
 
 obj-y += hwusb/

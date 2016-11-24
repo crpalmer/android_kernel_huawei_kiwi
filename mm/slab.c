@@ -131,7 +131,6 @@
 
 #ifdef CONFIG_DUMP_SLAB_INFO
 #include <linux/module.h>
-#include <linux/srecorder.h>
 #endif
 
 /*

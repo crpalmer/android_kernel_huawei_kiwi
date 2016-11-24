@@ -39,8 +39,8 @@
 #include <linux/mm_types.h>
 #include <linux/dma-contiguous.h>
 #include <linux/dma-removed.h>
-#include <trace/events/kmem.h>
 #include <linux/delay.h>
+#include <trace/events/kmem.h>
 
 struct cma {
 	unsigned long	base_pfn;
@@ -95,31 +95,7 @@ static struct cma *cma_get_area_by_name(const char *name)
 	return NULL;
 }
 
-unsigned long cma_get_base_by_name(const char *name)
-{
-    int i;
-    if (!name)
-        return 0;
 
-    for (i = 0; i < cma_area_count; i++)
-        if (cma_areas[i].name && strcmp(cma_areas[i].name, name) == 0)
-            return (unsigned long)(cma_areas[i].base);
-    return 0;
-}
-EXPORT_SYMBOL(cma_get_base_by_name);
-
-unsigned long cma_get_size_by_name(const char *name)
-{
-    int i;
-    if (!name)
-        return 0;
-
-    for (i = 0; i < cma_area_count; i++)
-        if (cma_areas[i].name && strcmp(cma_areas[i].name, name) == 0)
-            return cma_areas[i].size;
-    return 0;
-}
-EXPORT_SYMBOL(cma_get_size_by_name);
 
 #ifdef CONFIG_CMA_SIZE_MBYTES
 #define CMA_SIZE_MBYTES CONFIG_CMA_SIZE_MBYTES

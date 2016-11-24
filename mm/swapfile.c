@@ -42,7 +42,6 @@
 
 #ifdef CONFIG_DUMP_SYS_INFO
 #include <linux/module.h>
-#include <linux/srecorder.h>
 #endif
 
 static bool swap_count_continued(struct swap_info_struct *, pgoff_t,
