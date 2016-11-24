@@ -30,6 +30,7 @@
 #include <linux/suspend.h>
 #include <linux/cpuidle.h>
 #include <linux/timer.h>
+
 #include "../base.h"
 #include "power.h"
 
