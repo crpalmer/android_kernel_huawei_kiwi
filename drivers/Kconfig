@@ -190,8 +190,6 @@ source "drivers/devdetect/Kconfig"
 
 source "drivers/firmware/Kconfig"
 
-source "drivers/goldeneye/Kconfig"
-
 source "drivers/huawei_platform/Kconfig"
 
 source "drivers/hwusb/Kconfig"
