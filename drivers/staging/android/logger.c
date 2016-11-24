@@ -808,13 +808,11 @@ out_free_buffer:
 	return ret;
 }
 
-#define CONFIG_HUAWEI_LOGCAT_SIZE	(256)
-
 static int __init logger_init(void)
 {
 	int ret;
 
-	ret = create_log(LOGGER_LOG_MAIN, CONFIG_HUAWEI_LOGCAT_SIZE*1024);
+	ret = create_log(LOGGER_LOG_MAIN, CONFIG_LOGCAT_SIZE*1024);
 	if (unlikely(ret))
 		goto out;
 
@@ -826,10 +824,7 @@ static int __init logger_init(void)
 	if (unlikely(ret))
 		goto out;
 
-	ret = create_log(LOGGER_LOG_SYSTEM, CONFIG_HUAWEI_LOGCAT_SIZE*1024);
-	if (unlikely(ret))
-		goto out;
-	ret = create_log(LOGGER_LOG_EXCEPTION, CONFIG_LOGCAT_SIZE*1024);
+	ret = create_log(LOGGER_LOG_SYSTEM, CONFIG_LOGCAT_SIZE*1024);
 	if (unlikely(ret))
 		goto out;
 
