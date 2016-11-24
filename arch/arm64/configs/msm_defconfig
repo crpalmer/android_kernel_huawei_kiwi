@@ -3,7 +3,6 @@
 # Linux/arm64 3.10.49 Kernel Configuration
 #
 CONFIG_HUAWEI_KERNEL=y
-# CONFIG_HUAWEI_KERNEL_DEBUG is not set
 # CONFIG_SELINUX_DMD_REPORT is not set
 CONFIG_ARM64=y
 # CONFIG_EFS_ENLARGE_FEATURE is not set

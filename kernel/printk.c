@@ -225,9 +225,6 @@ struct log {
 	pid_t pid;					/* task pid */
 	char comm[TASK_COMM_LEN];	/* task name */
 #endif
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	int cpu_no;
-#endif
 #if defined(CONFIG_LOG_BUF_MAGIC)
 	u32 magic;		/* handle for ramdump analysis tools */
 #endif
@@ -439,9 +436,6 @@ static void log_oops_store(struct log *msg)
 			memset(msg->comm, 0, TASK_COMM_LEN);
 			memcpy(msg->comm, current->comm, TASK_COMM_LEN-1);
 #endif
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-			msg->cpu_no = smp_processor_id();
-#endif
 			eom = 1;
 		}
 
@@ -520,10 +514,6 @@ static void log_store(int facility, int level,
 	memset(msg->comm, 0, TASK_COMM_LEN);
 	memcpy(msg->comm, current->comm, TASK_COMM_LEN-1);
 #endif
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	msg->cpu_no = smp_processor_id();
-#endif
-	
 	LOG_MAGIC(msg);
 	if (ts_nsec > 0)
 		msg->ts_nsec = ts_nsec;
@@ -1117,16 +1107,6 @@ static size_t print_task_info(pid_t pid, const char *task_name, char *buf)
 	return sprintf(buf, "[%d, %s]", pid, task_name);
 }
 
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-static size_t print_cpu_info(int cpu, char* buf)
-{
-	if (!buf)
-		return snprintf(NULL, 0, "[cpu%d]", cpu);
-
-	return sprintf(buf, "[cpu%d]", cpu);
-}
-#endif
-
 #endif
 
 static size_t print_prefix(const struct log *msg, bool syslog, char *buf)
@@ -1151,10 +1131,6 @@ static size_t print_prefix(const struct log *msg, bool syslog, char *buf)
 #ifdef CONFIG_HUAWEI_KERNEL
 	len += print_task_info(msg->pid, msg->comm, buf ? buf + len : NULL);
 #endif
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	len += print_cpu_info(msg->cpu_no, buf ? buf + len : NULL);
-#endif
-	
 	len += print_time(msg->ts_nsec, buf ? buf + len : NULL);
 	return len;
 }

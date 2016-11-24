@@ -107,11 +107,7 @@ static void *emergency_dload_mode_addr;
 static bool scm_dload_supported;
 
 static int dload_set(const char *val, struct kernel_param *kp);
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-static int download_mode = 1;
-#else
 static int download_mode = 0;
-#endif
 module_param_call(download_mode, dload_set, param_get_int,
 			&download_mode, 0644);
 static int panic_prep_restart(struct notifier_block *this,
@@ -252,33 +248,6 @@ int usb_update_thread(void *__unused)
         msleep(USB_UPDATE_POLL_TIME);
     }
     return 0;
-}
-#endif
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-static void enable_emergency_dload_mode(void)
-{
-	int ret;
-
-	if (emergency_dload_mode_addr) {
-		__raw_writel(EMERGENCY_DLOAD_MAGIC1,
-				emergency_dload_mode_addr);
-		__raw_writel(EMERGENCY_DLOAD_MAGIC2,
-				emergency_dload_mode_addr +
-				sizeof(unsigned int));
-		__raw_writel(EMERGENCY_DLOAD_MAGIC3,
-				emergency_dload_mode_addr +
-				(2 * sizeof(unsigned int)));
-
-		/* Need disable the pmic wdt, then the emergency dload mode
-		 * will not auto reset. */
-		qpnp_pon_wd_config(0);
-		mb();
-	}
-
-	ret = scm_set_dload_mode(SCM_EDLOAD_MODE, 0);
-	if (ret)
-		pr_err("Failed to set secure EDLOAD mode: %d\n", ret);
 }
 #endif
 
@@ -433,10 +402,6 @@ static void msm_restart_prepare(const char *cmd)
 				__raw_writel(0x6f656d00 | (code & 0xff),
 					     restart_reason);
 
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-		} else if (!strncmp(cmd, "edl", 3)) {
-			enable_emergency_dload_mode();
-#endif
 #ifdef CONFIG_FEATURE_HUAWEI_EMERGENCY_DATA
 		} else if (!strncmp(cmd, "mountfail", strlen("mountfail"))) {
 		    __raw_writel(MOUNTFAIL_MAGIC_NUM, restart_reason);

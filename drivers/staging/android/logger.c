@@ -755,11 +755,7 @@ static int __init create_log(char *log_name, int size)
 	int ret = 0;
 	struct logger_log *log;
 	unsigned char *buffer;
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	buffer = kzalloc((unsigned int)size, GFP_KERNEL);
-#else
 	buffer = vmalloc(size);
-#endif
 	if (buffer == NULL)
 		return -ENOMEM;
 
@@ -813,11 +809,7 @@ out_free_buffer:
 	return ret;
 }
 
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-#define CONFIG_HUAWEI_LOGCAT_SIZE	(1024)
-#else
 #define CONFIG_HUAWEI_LOGCAT_SIZE	(256)
-#endif
 
 static int __init logger_init(void)
 {

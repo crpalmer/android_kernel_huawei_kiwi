@@ -67,16 +67,6 @@ struct ion_device {
 	struct dentry *clients_debug_root;
 };
 
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-struct ion_item_read_write {
-	char comm[TASK_COMM_LEN];
-	pid_t pid;	
-};
-
-static struct ion_item_read_write last_reader;
-static struct ion_item_read_write last_writer;
-#endif
 /**
  * struct ion_client - a process/hw block local address space
  * @node:		node in the tree of all clients
@@ -531,13 +521,6 @@ struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
 		return ERR_PTR(-EINVAL);
 
 	down_read(&dev->lock);
-	
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_reader.pid = current->pid;
-	memset(last_reader.comm, 0, TASK_COMM_LEN);
-	memcpy(last_reader.comm, current->comm, TASK_COMM_LEN-1);
-#endif
-
 	plist_for_each_entry(heap, &dev->heaps, node) {
 		/* if the caller didn't specify this heap id */
 		if (!((1 << heap->id) & heap_id_mask))
@@ -574,11 +557,6 @@ struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
 		}
 	}
 	up_read(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_reader.pid = -1;
-	memset(last_reader.comm, 0, TASK_COMM_LEN);
-#endif	
 
 	if (buffer == NULL) {
 		trace_ion_alloc_buffer_fail(client->name, dbg_str, len,
@@ -883,22 +861,11 @@ struct ion_client *ion_client_create(struct ion_device *dev,
 		goto err_free_client;
 
 	down_write(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_writer.pid = current->pid;
-	memset(last_writer.comm, 0, TASK_COMM_LEN);
-	memcpy(last_writer.comm, current->comm, TASK_COMM_LEN-1);
-#endif
-	
 	client->display_serial = ion_get_client_serial(&dev->clients, name);
 	client->display_name = kasprintf(
 		GFP_KERNEL, "%s-%d", name, client->display_serial);
 	if (!client->display_name) {
 		up_write(&dev->lock);
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-		last_writer.pid = -1;
-		memset(last_writer.comm, 0, TASK_COMM_LEN);
-#endif		
 		goto err_free_client_name;
 	}
 	p = &dev->clients.rb_node;
@@ -925,11 +892,6 @@ struct ion_client *ion_client_create(struct ion_device *dev,
 	}
 
 	up_write(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-		last_writer.pid = -1;
-		memset(last_writer.comm, 0, TASK_COMM_LEN);
-#endif			
 
 	return client;
 
@@ -959,24 +921,12 @@ void ion_client_destroy(struct ion_client *client)
 	idr_destroy(&client->idr);
 
 	down_write(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_writer.pid = current->pid;
-	memset(last_writer.comm, 0, TASK_COMM_LEN);
-	memcpy(last_writer.comm, current->comm, TASK_COMM_LEN-1);
-#endif
-	
 	if (client->task)
 		put_task_struct(client->task);
 	rb_erase(&client->node, &dev->clients);
 	debugfs_remove_recursive(client->debug_root);
 
 	up_write(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_writer.pid = -1;
-	memset(last_writer.comm, 0, TASK_COMM_LEN);
-#endif				
 
 	kfree(client->display_name);
 	kfree(client->name);
@@ -1623,13 +1573,6 @@ void ion_debug_mem_map_create(struct seq_file *s, struct ion_heap *heap,
 		return;
 
 	down_read(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_reader.pid = current->pid;
-	memset(last_reader.comm, 0, TASK_COMM_LEN);
-	memcpy(last_reader.comm, current->comm, TASK_COMM_LEN-1);
-#endif
-
 	for (cnode = rb_first(&dev->clients); cnode; cnode = rb_next(cnode)) {
 		struct rb_node *hnode;
 		client = rb_entry(cnode, struct ion_client, node);
@@ -1661,13 +1604,6 @@ void ion_debug_mem_map_create(struct seq_file *s, struct ion_heap *heap,
 		mutex_unlock(&client->lock);
 	}
 	up_read(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_reader.pid = -1;
-	memset(last_reader.comm, 0, TASK_COMM_LEN);
-#endif
-
-	
 	return;
 
 inner_error:
@@ -1675,13 +1611,6 @@ inner_error:
 		"ERROR: out of memory. Part of memory map will not be logged\n");
 	mutex_unlock(&client->lock);
 	up_read(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_reader.pid = -1;
-	memset(last_reader.comm, 0, TASK_COMM_LEN);
-#endif
-
-	
 }
 
 /**
@@ -1738,14 +1667,6 @@ static int ion_debug_heap_show(struct seq_file *s, void *unused)
 	seq_printf(s, "----------------------------------------------------\n");
 
 	down_read(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_reader.pid = current->pid;
-	memset(last_reader.comm, 0, TASK_COMM_LEN);
-	memcpy(last_reader.comm, current->comm, TASK_COMM_LEN-1);
-#endif
-
-	
 	for (n = rb_first(&dev->clients); n; n = rb_next(n)) {
 		struct ion_client *client = rb_entry(n, struct ion_client,
 						     node);
@@ -1764,13 +1685,6 @@ static int ion_debug_heap_show(struct seq_file *s, void *unused)
 		}
 	}
 	up_read(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_reader.pid = -1;
-	memset(last_reader.comm, 0, TASK_COMM_LEN);
-#endif
-
-	
 	seq_printf(s, "----------------------------------------------------\n");
 	seq_printf(s, "orphaned allocations (info is from last known client):"
 		   "\n");
@@ -1827,12 +1741,6 @@ void show_ion_usage(struct ion_device *dev)
 		return;
 	}
 
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-		last_reader.pid = current->pid;
-		memset(last_reader.comm, 0, TASK_COMM_LEN);
-		memcpy(last_reader.comm, current->comm, TASK_COMM_LEN-1);
-#endif	
-
 	pr_info("%16.s %16.s %16.s\n", "Heap name", "Total heap size",
 					"Total orphaned size");
 	pr_info("---------------------------------\n");
@@ -1846,13 +1754,6 @@ void show_ion_usage(struct ion_device *dev)
 
 	}
 	up_read(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_reader.pid = -1;
-	memset(last_reader.comm, 0, TASK_COMM_LEN);
-#endif
-
-	
 }
 
 #ifdef DEBUG_HEAP_SHRINKER
@@ -1910,13 +1811,6 @@ void ion_device_add_heap(struct ion_device *dev, struct ion_heap *heap)
 
 	heap->dev = dev;
 	down_write(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_writer.pid = current->pid;
-	memset(last_writer.comm, 0, TASK_COMM_LEN);
-	memcpy(last_writer.comm, current->comm, TASK_COMM_LEN-1);
-#endif
-	
 	/* use negative heap->id to reverse the priority -- when traversing
 	   the list later attempt higher id numbers first */
 	plist_node_init(&heap->node, -heap->id);
@@ -1949,12 +1843,6 @@ void ion_device_add_heap(struct ion_device *dev, struct ion_heap *heap)
 	}
 #endif
 	up_write(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_writer.pid = -1;
-	memset(last_writer.comm, 0, TASK_COMM_LEN);
-#endif
-
 }
 
 int ion_walk_heaps(struct ion_client *client, int heap_id, void *data,
@@ -1968,13 +1856,6 @@ int ion_walk_heaps(struct ion_client *client, int heap_id, void *data,
 	 * and find the heap that is specified.
 	 */
 	down_write(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_writer.pid = current->pid;
-	memset(last_writer.comm, 0, TASK_COMM_LEN);
-	memcpy(last_writer.comm, current->comm, TASK_COMM_LEN-1);
-#endif
-
 	plist_for_each_entry(heap, &dev->heaps, node) {
 		if (ION_HEAP(heap->id) != heap_id)
 			continue;
@@ -1982,12 +1863,6 @@ int ion_walk_heaps(struct ion_client *client, int heap_id, void *data,
 		break;
 	}
 	up_write(&dev->lock);
-
-#ifdef CONFIG_HUAWEI_KERNEL_DEBUG
-	last_writer.pid = -1;
-	memset(last_writer.comm, 0, TASK_COMM_LEN);
-#endif
-	
 	return ret_val;
 }
 EXPORT_SYMBOL(ion_walk_heaps);
