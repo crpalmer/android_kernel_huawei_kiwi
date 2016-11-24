@@ -1116,10 +1116,6 @@ static int qpnp_lbc_ibatsafe_set(struct qpnp_lbc_chip *chip, int safe_current)
  */
 
 
-#ifdef CONFIG_HUAWEI_THERMAL
-/* Use another mothed to reduce the power consumption of FTM mode. */
-#endif
-
 static int qpnp_lbc_ibatmax_set(struct qpnp_lbc_chip *chip, int chg_current)
 {
 	u8 reg_val;

@@ -573,12 +573,6 @@ config HUAWEI_PMU_DSM
 	tristate "huawei dsm charger"
 	depends on HUAWEI_DSM
 
-config HUAWEI_THERMAL
-	bool "Use huawei thermal code"
-	default n
-	help
-	  Use huawei thermal code
-
 config MSM_BCL_CTL
 	bool "BCL Framework driver"
 	help
