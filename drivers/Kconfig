@@ -188,6 +188,8 @@ source "drivers/phy/Kconfig"
 
 source "drivers/soc/Kconfig"
 
+source "drivers/devdetect/Kconfig"
+
 source "drivers/firmware/Kconfig"
 
 endmenu
