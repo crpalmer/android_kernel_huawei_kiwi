@@ -1058,13 +1058,6 @@ static int mmc_blk_ioctl(struct block_device *bdev, fmode_t mode,
 		ret = mmc_blk_ioctl_rpmb_cmd(bdev,
 				(struct mmc_ioc_rpmb __user *)arg);
 
-#ifdef CONFIG_HW_SYSTEM_WR_PROTECT
-	if(cmd == MMC_IOC_WP_CMD)
-    {
-		pr_debug("[HW]:%s.ioclt MMC_IOC_WP_CMD.\n", __func__);
-		ret = blk_set_ro_secure_debuggable(arg);
-	}
-#endif
 	return ret;
 }
 
