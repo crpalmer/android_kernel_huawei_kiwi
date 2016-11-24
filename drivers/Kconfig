@@ -188,8 +188,6 @@ source "drivers/soc/Kconfig"
 
 source "drivers/devdetect/Kconfig"
 
-source "drivers/huawei/Kconfig"
-
 source "drivers/firmware/Kconfig"
 
 source "drivers/goldeneye/Kconfig"
