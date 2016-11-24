@@ -170,3 +170,5 @@ obj-$(CONFIG_BIF)		+= bif/
 obj-$(CONFIG_SENSORS)		+= sensors/
 obj-$(CONFIG_SENSORS_SSC)	+= sensors/
 obj-$(CONFIG_HUAWEI_HW_DEV_DCT) += devdetect/
+
+obj-$(CONFIG_HUAWEI_DRIVERS)    += huawei_platform/
