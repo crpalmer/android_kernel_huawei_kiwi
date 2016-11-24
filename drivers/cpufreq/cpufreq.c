@@ -2025,6 +2025,9 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 	policy->min = new_policy->min;
 	policy->max = new_policy->max;
 
+	pr_debug("new min and max freqs are %u - %u kHz\n",
+					policy->min, policy->max);
+
 	if (cpufreq_driver->setpolicy) {
 		policy->policy = new_policy->policy;
 		pr_debug("setting range\n");
@@ -2148,9 +2151,6 @@ static int cpufreq_cpu_callback(struct notifier_block *nfb,
 		switch (action & ~CPU_TASKS_FROZEN) {
 		case CPU_ONLINE:
 			__cpufreq_add_dev(dev, NULL, frozen);
-#ifdef CONFIG_HUAWEI_KERNEL
-			kobject_uevent(&dev->kobj, KOBJ_ADD);
-#endif
 			cpufreq_update_policy(cpu);
 			break;
 

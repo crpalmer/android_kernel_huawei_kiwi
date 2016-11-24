@@ -322,6 +322,7 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			if (ignore_nice)
 				j_cdbs->prev_cpu_nice =
 					kcpustat_cpu(j).cpustat[CPUTIME_NICE];
+
 			mutex_init(&j_cdbs->timer_mutex);
 			INIT_DEFERRABLE_WORK(&j_cdbs->work,
 					     dbs_data->cdata->gov_dbs_timer);
@@ -361,11 +362,6 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		break;
 
 	case CPUFREQ_GOV_LIMITS:
-        mutex_lock(&dbs_data->mutex);
-        if (!cpu_cdbs->cur_policy) {
-            mutex_unlock(&dbs_data->mutex);
-            break;
-        }
 		mutex_lock(&cpu_cdbs->timer_mutex);
 		if (policy->max < cpu_cdbs->cur_policy->cur)
 			__cpufreq_driver_target(cpu_cdbs->cur_policy,
@@ -375,7 +371,6 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 					policy->min, CPUFREQ_RELATION_L);
 		dbs_check_cpu(dbs_data, cpu);
 		mutex_unlock(&cpu_cdbs->timer_mutex);
-        mutex_unlock(&dbs_data->mutex);
 		break;
 	}
 	return 0;
