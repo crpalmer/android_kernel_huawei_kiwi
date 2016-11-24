@@ -636,6 +636,5 @@ source "drivers/misc/mei/Kconfig"
 source "drivers/misc/vmw_vmci/Kconfig"
 source "drivers/misc/qcom/Kconfig"
 #/*move dsm to other dir*/
-source "drivers/misc/hw_kstate/Kconfig"
 source "drivers/misc/huawei_reset_detect/Kconfig"
 endmenu
