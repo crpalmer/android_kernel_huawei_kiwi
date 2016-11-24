@@ -71,7 +71,6 @@ obj-$(CONFIG_CHARGER_TPS65090)	+= tps65090-charger.o
 obj-$(CONFIG_BATTERY_BCL)	+= battery_current_limit.o
 obj-$(CONFIG_MSM_BCL_CTL)	+= msm_bcl.o
 obj-$(CONFIG_MSM_BCL_PERIPHERAL_CTL) += bcl_peripheral.o
-obj-$(CONFIG_HUAWEI_MSG_POLICY) += msgnotify/
 obj-$(CONFIG_POWER_RESET)	+= reset/
 # /* Add G7 charger driver */
 obj-$(CONFIG_CHARGER_BQ24152)   += bq24152_charger.o
