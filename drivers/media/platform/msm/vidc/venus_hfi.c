@@ -992,7 +992,6 @@ static int venus_hfi_vote_active_buses(void *dev,
 		}
 
 		bus_vector = venus_hfi_get_bus_vector(device, bus, load);
-		
 		rc = venus_hfi_vote_bus(bus, bus_vector);
 		if (rc) {
 			dprintk(VIDC_ERR, "Failed voting for bus %s @ %d: %d\n",
@@ -3320,7 +3319,6 @@ static void venus_hfi_flush_debug_queue(
 	struct venus_hfi_device *device, u8 *packet)
 {
 	u8 local_packet[VIDC_IFACEQ_MED_PKT_SIZE];
-
 	if (!device) {
 		dprintk(VIDC_ERR, "%s: Invalid params\n", __func__);
 		return;
@@ -4129,8 +4127,8 @@ fail_protect_mem:
 	device->power_enabled = false;
 	if (device->resources.fw.cookie)
 		subsystem_put(device->resources.fw.cookie);
-fail_load_fw:
 	device->resources.fw.cookie = NULL;
+fail_load_fw:
 	venus_hfi_iommu_detach(device);
 fail_iommu_attach:
 	venus_hfi_disable_unprepare_clks(device);
