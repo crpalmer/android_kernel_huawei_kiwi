@@ -31,6 +31,9 @@
 #include "venus_hfi.h"
 #include "vidc_hfi_io.h"
 #include "msm_vidc_debug.h"
+#ifdef CONFIG_HUAWEI_DSM
+#include "msm_camera_vid_dsm.h"
+#endif
 
 #define FIRMWARE_SIZE			0X00A00000
 #define REG_ADDR_OFFSET_BITMASK	0x000FFFFF
