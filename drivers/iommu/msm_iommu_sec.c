@@ -461,7 +461,7 @@ fail:
 int msm_iommu_sec_program_iommu(struct msm_iommu_drvdata *drvdata,
 			struct msm_iommu_ctx_drvdata *ctx_drvdata)
 {
-	int ret = 0, scm_ret = 0;
+	int ret, scm_ret = 0;
 
 	if (drvdata->smmu_local_base) {
 		writel_relaxed(0xFFFFFFFF, drvdata->smmu_local_base +
@@ -469,13 +469,10 @@ int msm_iommu_sec_program_iommu(struct msm_iommu_drvdata *drvdata,
 		mb();
 	}
 
-	if (drvdata->model != MMU_500) {
-		ret = scm_restore_sec_cfg(drvdata->sec_id, ctx_drvdata->num,
-					&scm_ret);
-		if (ret || scm_ret) {
-			pr_err("scm call IOMMU_SECURE_CFG failed\n");
-			return ret ? ret : -EINVAL;
-		}
+	ret = scm_restore_sec_cfg(drvdata->sec_id, ctx_drvdata->num, &scm_ret);
+	if (ret || scm_ret) {
+		pr_err("scm call IOMMU_SECURE_CFG failed\n");
+		return ret ? ret : -EINVAL;
 	}
 
 	return ret;
