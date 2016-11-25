@@ -266,18 +266,18 @@ static int soc_pcm_open(struct snd_pcm_substream *substream)
 	ret = -EINVAL;
 	snd_pcm_limit_hw_rates(runtime);
 	if (!runtime->hw.rates) {
-		pr_err( "ASoC: %s <-> %s No matching rates\n",
+		printk(KERN_ERR "ASoC: %s <-> %s No matching rates\n",
 			codec_dai->name, cpu_dai->name);
 		goto config_err;
 	}
 	if (!runtime->hw.formats) {
-		pr_err( "ASoC: %s <-> %s No matching formats\n",
+		printk(KERN_ERR "ASoC: %s <-> %s No matching formats\n",
 			codec_dai->name, cpu_dai->name);
 		goto config_err;
 	}
 	if (!runtime->hw.channels_min || !runtime->hw.channels_max ||
 	    runtime->hw.channels_min > runtime->hw.channels_max) {
-		pr_err( "ASoC: %s <-> %s No matching channels\n",
+		printk(KERN_ERR "ASoC: %s <-> %s No matching channels\n",
 				codec_dai->name, cpu_dai->name);
 		goto config_err;
 	}
@@ -2438,7 +2438,7 @@ int soc_new_pcm(struct snd_soc_pcm_runtime *rtd, int num)
 
 	pcm->private_free = platform->driver->pcm_free;
 out:
-	dev_notice(rtd->card->dev, " %s <-> %s mapping ok\n", codec_dai->name,
+	dev_info(rtd->card->dev, " %s <-> %s mapping ok\n", codec_dai->name,
 		cpu_dai->name);
 	return ret;
 }
