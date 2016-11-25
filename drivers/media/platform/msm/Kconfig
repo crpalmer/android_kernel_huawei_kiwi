@@ -42,9 +42,6 @@ if MSMB_CAMERA
 source "drivers/media/platform/msm/camera_v2/Kconfig"
 endif # MSMB_CAMERA
 
-if MSM_CAMERA_MINIISP
-source "drivers/media/platform/msm/camera_v2_misp/Kconfig"
-endif # MSM_CAMERA_MINIISP
 source "drivers/media/platform/msm/vidc/Kconfig"
 source "drivers/media/platform/msm/wfd/Kconfig"
 source "drivers/media/platform/msm/dvb/Kconfig"
