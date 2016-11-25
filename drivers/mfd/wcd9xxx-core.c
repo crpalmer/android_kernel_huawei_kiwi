@@ -679,7 +679,7 @@ static const struct wcd9xxx_codec_type
 			}
 			*version = (u8)rc & 0x1F;
 		}
-		dev_notice(wcd9xxx->dev,
+		dev_info(wcd9xxx->dev,
 			 "%s: detected %s, major 0x%x, minor 0x%x, ver 0x%x\n",
 			 __func__, d->dev->name, d->id_major, d->id_minor,
 			 *version);
@@ -1466,7 +1466,7 @@ static int wcd9xxx_dt_parse_vreg_info(struct device *dev,
 	}
 	vreg->optimum_uA = prop_val;
 
-	dev_notice(dev, "%s: vol=[%d %d]uV, curr=[%d]uA, ond %d\n", vreg->name,
+	dev_info(dev, "%s: vol=[%d %d]uV, curr=[%d]uA, ond %d\n", vreg->name,
 		vreg->min_uV, vreg->max_uV, vreg->optimum_uA, vreg->ondemand);
 	return 0;
 }
@@ -1674,7 +1674,7 @@ static u32 wcd9xxx_validate_dmic_sample_rate(struct device *dev,
 	return dmic_sample_rate;
 
 undefined_rate:
-	dev_notice(dev,
+	dev_info(dev,
 		 "%s: Invalid %s = %d, for mclk %d\n",
 		 __func__,
 		 dmic_rate_type,
@@ -1865,7 +1865,7 @@ static int wcd9xxx_slim_probe(struct slim_device *slim)
 		return -ENODEV;
 	}
 	if (slim->dev.of_node) {
-		dev_notice(&slim->dev, "Platform data from device tree\n");
+		dev_info(&slim->dev, "Platform data from device tree\n");
 		pdata = wcd9xxx_populate_dt_pdata(&slim->dev);
 		if (!pdata) {
 			dev_err(&slim->dev,
@@ -1886,7 +1886,7 @@ static int wcd9xxx_slim_probe(struct slim_device *slim)
 		slim->dev.platform_data = pdata;
 
 	} else {
-		dev_notice(&slim->dev, "Platform data from board file\n");
+		dev_info(&slim->dev, "Platform data from board file\n");
 		pdata = slim->dev.platform_data;
 	}
 
@@ -2037,7 +2037,7 @@ static int wcd9xxx_device_up(struct wcd9xxx *wcd9xxx)
 		return 0;
 	}
 
-	dev_notice(wcd9xxx->dev, "%s: codec bring up\n", __func__);
+	dev_info(wcd9xxx->dev, "%s: codec bring up\n", __func__);
 	wcd9xxx_bring_up(wcd9xxx);
 	ret = wcd9xxx_irq_init(wcd9xxx_res);
 	if (ret) {
@@ -2058,7 +2058,7 @@ static int wcd9xxx_slim_device_reset(struct slim_device *sldev)
 		return -EINVAL;
 	}
 
-	dev_notice(wcd9xxx->dev, "%s: device reset\n", __func__);
+	dev_info(wcd9xxx->dev, "%s: device reset\n", __func__);
 	if (wcd9xxx->slim_device_bootup)
 		return 0;
 	ret = wcd9xxx_reset(wcd9xxx);
@@ -2075,7 +2075,7 @@ static int wcd9xxx_slim_device_up(struct slim_device *sldev)
 		pr_err("%s: wcd9xxx is NULL\n", __func__);
 		return -EINVAL;
 	}
-	dev_notice(wcd9xxx->dev, "%s: slim device up\n", __func__);
+	dev_info(wcd9xxx->dev, "%s: slim device up\n", __func__);
 	return wcd9xxx_device_up(wcd9xxx);
 }
 
